@@ -1109,7 +1109,7 @@ export default function App() {
               </div>
 
               {/* Scrolled stocks lists container */}
-              <div className="flex-1 overflow-y-auto space-y-2 max-h-[460px] pr-1">
+              <div className="flex-1 overflow-y-auto space-y-2 max-h-[350px] sm:max-h-[460px] lg:max-h-[500px] pt-1.5 pb-2 pr-1 subtle-scrollbar">
                 {stocks.length === 0 ? (
                   <div className="py-12 text-center text-zinc-500 text-xs">
                     <Clock className="h-6 w-6 mx-auto mb-2 opacity-40 animate-spin" />
