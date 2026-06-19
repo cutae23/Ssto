@@ -2,8 +2,8 @@ import express from 'express';
 import path from 'path';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
-import { INITIAL_STOCKS, DEFAULT_AI_REPORTS, SEED_DISCUSSIONS, getKneeShoulderStatus, generateHistoricalCandles } from './src/data/mockStocks';
-import { Stock, DiscussionPost, AiAnalysisReport } from './src/types';
+import { INITIAL_STOCKS, DEFAULT_AI_REPORTS, SEED_DISCUSSIONS, getKneeShoulderStatus, generateHistoricalCandles } from './src/data/mockStocks.ts';
+import { Stock, DiscussionPost, AiAnalysisReport } from './src/types.ts';
 
 dotenv.config();
 
