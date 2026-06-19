@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Stock Analysis App",
+  "description": "실시간 차트, 모의 투자 대시보드, 관심종목 알림 설정 및 테마별 분석과 AI를 이용한 상승/하락 요인 분석 기능이 포함된 종합 주식 분석 애플리케이션",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
