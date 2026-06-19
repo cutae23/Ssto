@@ -28,7 +28,7 @@ export default function PortfolioDashboard({ stocks, portfolio, cash, onTrade }:
     return (
       s.name.toLowerCase().includes(term) ||
       s.symbol.includes(term) ||
-      s.nameEn.toLowerCase().includes(term)
+      (s.nameEn ? s.nameEn.toLowerCase().includes(term) : false)
     );
   });
 

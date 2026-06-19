@@ -712,7 +712,7 @@ export default function App() {
     return (
       stock.name.toLowerCase().includes(query) ||
       stock.symbol.toLowerCase().includes(query) ||
-      stock.nameEn.toLowerCase().includes(query)
+      (stock.nameEn ? stock.nameEn.toLowerCase().includes(query) : false)
     );
   });
 
