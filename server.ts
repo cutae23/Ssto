@@ -449,8 +449,16 @@ setInterval(simulateMicroFluctuations, 3000);
 
 // Lazy-initialization helper for Gemini as recommended in rules
 let aiClient: GoogleGenAI | null = null;
+
+function getCleanKey(key?: string): string {
+  if (!key) return '';
+  return key.trim().replace(/^['"]|['"]$/g, '');
+}
+
 function getGemini(reqApiKey?: string): GoogleGenAI {
-  const key = reqApiKey || process.env.GEMINI_API_KEY;
+  const rawKey = reqApiKey || process.env.GEMINI_API_KEY;
+  const key = getCleanKey(rawKey);
+  
   if (!key) {
     throw new Error('GEMINI_API_KEY environment variable is required in settings/secrets.');
   }
@@ -458,7 +466,7 @@ function getGemini(reqApiKey?: string): GoogleGenAI {
   if (reqApiKey) {
     // If client provided an on-the-fly key, create a fresh client instance to prevent cross-contamination
     return new GoogleGenAI({
-      apiKey: reqApiKey,
+      apiKey: key,
       httpOptions: {
         headers: {
           'User-Agent': 'aistudio-build',
@@ -509,15 +517,17 @@ app.get('/api/ai-config', (req, res) => {
 
 // Check if Gemini API key exists server-side
 app.get('/api/ai-config-status', (req, res) => {
+  const cleanServerKey = getCleanKey(process.env.GEMINI_API_KEY);
   res.json({
-    serverKeyActive: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '')
+    serverKeyActive: !!(cleanServerKey !== '')
   });
 });
 
 // Live test endpoint for client or developer API keys
 app.post('/api/test-gemini', async (req, res) => {
   const customKey = req.headers['x-gemini-api-key'] as string;
-  const keyToUse = (customKey && customKey.trim() !== '') ? customKey.trim() : process.env.GEMINI_API_KEY;
+  const rawKeyToUse = (customKey && customKey.trim() !== '') ? customKey.trim() : process.env.GEMINI_API_KEY;
+  const keyToUse = getCleanKey(rawKeyToUse);
 
   if (!keyToUse) {
     res.status(400).json({ 

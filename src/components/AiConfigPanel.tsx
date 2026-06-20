@@ -102,7 +102,21 @@ export default function AiConfigPanel() {
         }
       });
 
-      const data = await res.json();
+      const textResponse = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(textResponse);
+      } catch (parseErr) {
+        setTestStatus('ERROR');
+        let errorMsg = `서버가 JSON 형식의 데이터가 아닌 잘못된 응답을 보냈습니다 (HTTP 상태코드: ${res.status}).`;
+        if (textResponse.includes('<html') || textResponse.includes('<!DOCTYPE html') || textResponse.includes('vercel')) {
+          errorMsg += ' Vercel 배포 시 서버리스 핸들러(Serverless Function)가 작동되지 않아 오류 페이지(HTML)가 반환되었습니다. Vercel dashboard의 Logs를 열어 빌드 오류나 런타임 오류가 있는지 관찰하십시오.';
+        } else {
+          errorMsg += ` 응답 전문: ${textResponse.slice(0, 150)}...`;
+        }
+        setTestMessage(errorMsg);
+        return;
+      }
 
       if (res.ok && data.success) {
         setTestStatus('SUCCESS');
@@ -117,7 +131,7 @@ export default function AiConfigPanel() {
       }
     } catch (err: any) {
       setTestStatus('ERROR');
-      setTestMessage('네트워크 오류가 발생했습니다. 서버 상태를 다시 확인 전송하십시오.');
+      setTestMessage(`연결 요청 도중 네트워크 예외가 일어났습니다: ${err?.message || '요청 차단됨'}. 서버가 올바르게 기동되었는지 확인해주세요.`);
     }
   };
 
@@ -313,21 +327,36 @@ export default function AiConfigPanel() {
                 </div>
                 <div className="pl-7 space-y-2.5 text-[11px] text-zinc-400 leading-relaxed">
                   <p>
-                    Vercel 등의 클라우드 환경에 배포 시, 소스코드에 API 키가 하드코딩되지 않는 이상 빌드나 실행 시 키 탐색 예외(<code className="text-zinc-300 text-[10px]">Error: GEMINI_API_KEY...</code>)를 직면할 수 있습니다. 
+                    Vercel 등의 클라우드 환경에 배포 시 설정이 잘 반영되지 않는 핵심 이유는 <b>Vercel의 배포 캐시 및 빌드 라이프사이클</b> 때문입니다. 아래 원칙을 반드시 확인하세요:
                   </p>
                   
-                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-850 space-y-2 text-[11px]">
-                    <p className="font-bold text-zinc-300 text-[11px] flex items-center gap-1.5">
-                      <Cloud className="h-3.5 w-3.5 text-blue-400" />
-                      Vercel 환경 변수 세팅 프로시저:
-                    </p>
-                    <ol className="list-decimal pl-4.5 space-y-1 mt-1 text-zinc-400 text-[10.5px]">
-                      <li><b>Vercel 대시보드</b>에 로그인한 뒤 해당 프로젝트를 선택합니다.</li>
-                      <li>상단 탭 중 <b>Settings</b> &gt; 좌측 랙의 <b>Environment Variables</b> 메뉴로 이동합니다.</li>
-                      <li><b>Key</b>에 <code className="text-zinc-100 font-mono text-[9px] bg-zinc-800 px-1 py-0.2 rounded font-bold">GEMINI_API_KEY</code>를 입력합니다.</li>
-                      <li><b>Value</b> 칸에 생성한 실물 API Key를 기입하고 <b>Add</b>를 클릭합니다.</li>
-                      <li>반드시 배포 탭(Deployments)에서 <b>Redeploy (재배포)</b>를 시켜줘야 가상 격리 노드에 메모리 주입이 오프셋됩니다.</li>
-                    </ol>
+                  <div className="bg-zinc-900/60 p-3.5 rounded-lg border border-zinc-850 space-y-3.5 text-[11px]">
+                    <div className="space-y-1">
+                      <p className="font-bold text-red-400 flex items-center gap-1.5 leading-none">
+                        ⚠️ [필수] 신규 등록 후 Redeploy(재배포) 실행
+                      </p>
+                      <p className="text-[10px] text-zinc-400 pl-4">
+                        Vercel Settings에서 인라인으로 환경변수를 저장한 직후에는 이미 실행 중인 서버리스 가상 인스턴스에 즉각 로드되지 않습니다. <b>Deployments 탭으로 이동하여 최신 빌드를 누르고 [Redeploy(재배포)] 버튼을 눌러 프로젝트를 새로 빌드해야</b> 주입됩니다.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-zinc-850/60 pt-2.5 space-y-1">
+                      <p className="font-bold text-emerald-400 flex items-center gap-1.5 leading-none">
+                        💡 대괄호/따옴표 중복 삽입 대처 (서버 자동 해결 적용됨)
+                      </p>
+                      <p className="text-[10px] text-zinc-400 pl-4 animate-pulse">
+                        간혹 메모장이나 .env.example에서 복사 중 앞뒤 따옴표(<code className="text-zinc-200 font-mono bg-zinc-850 px-1 py-0.2 rounded font-bold">"</code> or <code className="text-zinc-205 font-mono bg-zinc-850 px-1 py-0.2 rounded font-bold">'</code>)를 그대로 값에 집어넣어 구글 클라이언트 인증이 깨질 때가 있습니다. <b>임시 조치를 위해 저희 서버에 자동 따옴표 스트리핑(Quote Stripper) 정화 장치를 주입해놓았습니다.</b> 안심하고 입력하셔도 무방합니다.
+                      </p>
+                    </div>
+
+                    <div className="border-t border-zinc-850/60 pt-2.5 space-y-1">
+                      <p className="font-bold text-sky-400 flex items-center gap-1.5 leading-none">
+                        ⚙️ 설정 환경 대상(Environments) 확인
+                      </p>
+                      <p className="text-[10px] text-zinc-400 pl-4">
+                        등록할 때 <b>Production, Preview, Development</b> 3개의 체크박스가 모두 체크되어 있는지 확인하세요. 하나라도 누락되면 특정 접속 상태에서 API 키를 인식하지 못합니다.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -336,10 +365,10 @@ export default function AiConfigPanel() {
               <div className="p-3 bg-indigo-500/5 rounded-xl border border-indigo-500/10 text-[11.5px] text-indigo-300">
                 <p className="font-extrabold flex items-center gap-1.5">
                   <AlertCircle className="h-3.5 w-3.5" />
-                  안내 및 우회 팁
+                  클라이언트 오버레이 기능 활성화 안내
                 </p>
-                <p className="mt-1 opacity-90 leading-relaxed">
-                  임시적으로 AI Studio 자체 세팅창의 비밀 공간이나 Vercel 설정 적용이 지연되거나 불가능할 경우, 상술된 <b>[개인 Gemini API 키 입력]</b> 상자에 키를 붙여넣으십시오! 브라우저 메모리 오버레이 로직이 서버 요청에 직접 편승해 fallback 없는 고속 라이브 AI 보고서를 출력해줍니다.
+                <p className="mt-1 opacity-90 leading-relaxed text-[10.5px]">
+                  환경 변수 등록 및 Vercel 재배포 과정을 매번 대기하기 번거로우신가요? 왼쪽의 <b>[개인 Gemini API 키 입력]</b> 상자에 본인의 API 키를 직접 붙여넣으십시오. 이 키는 브라우저 내부 <code className="bg-zinc-850 px-1 rounded text-zinc-200 font-mono">localStorage</code>에 기밀 저장되며, 서버 요청에 편승되어 Vercel 환경 변수가 감지되기 전이라도 즉시 100% 라이브 인포그래픽과 AI 분석 결과를 고속으로 즐기실 수 있습니다!
                 </p>
               </div>
 
