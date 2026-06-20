@@ -449,12 +449,25 @@ setInterval(simulateMicroFluctuations, 3000);
 
 // Lazy-initialization helper for Gemini as recommended in rules
 let aiClient: GoogleGenAI | null = null;
-function getGemini(): GoogleGenAI {
+function getGemini(reqApiKey?: string): GoogleGenAI {
+  const key = reqApiKey || process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error('GEMINI_API_KEY environment variable is required in settings/secrets.');
+  }
+  
+  if (reqApiKey) {
+    // If client provided an on-the-fly key, create a fresh client instance to prevent cross-contamination
+    return new GoogleGenAI({
+      apiKey: reqApiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+  }
+
   if (!aiClient) {
-    const key = process.env.GEMINI_API_KEY;
-    if (!key) {
-      throw new Error('GEMINI_API_KEY environment variable is required in settings/secrets.');
-    }
     aiClient = new GoogleGenAI({
       apiKey: key,
       httpOptions: {
@@ -492,6 +505,62 @@ app.get('/api/ai-config', (req, res) => {
   res.json({
     isProtected: !!(code && code.trim() !== '')
   });
+});
+
+// Check if Gemini API key exists server-side
+app.get('/api/ai-config-status', (req, res) => {
+  res.json({
+    serverKeyActive: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '')
+  });
+});
+
+// Live test endpoint for client or developer API keys
+app.post('/api/test-gemini', async (req, res) => {
+  const customKey = req.headers['x-gemini-api-key'] as string;
+  const keyToUse = (customKey && customKey.trim() !== '') ? customKey.trim() : process.env.GEMINI_API_KEY;
+
+  if (!keyToUse) {
+    res.status(400).json({ 
+      success: false, 
+      error: '제공된 API 키가 없으며, 서버 내 환경변수(GEMINI_API_KEY)도 구성되어 있지 않습니다.' 
+    });
+    return;
+  }
+
+  try {
+    const testClient = new GoogleGenAI({
+      apiKey: keyToUse,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build-validator',
+        }
+      }
+    });
+
+    const response = await testClient.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: 'Say hello in Korean. Briefly in 3 words.',
+    });
+
+    const text = response.text || '';
+    if (text) {
+      res.json({ 
+        success: true, 
+        mode: customKey ? 'USER_KEY' : 'SERVER_KEY' 
+      });
+    } else {
+      res.json({ 
+        success: false, 
+        error: '응답이 수신되었으나 반환 텍스트가 비어있습니다.' 
+      });
+    }
+  } catch (err: any) {
+    console.error('Gemini valid check fail:', err);
+    res.json({ 
+      success: false, 
+      error: err?.message || '구글 Gemini 백엔드 호출 도중 오류 발생: API 키가 잘못되었거나 만료되었을 수 있습니다.' 
+    });
+  }
 });
 
 // 1. Get Live Stocks
@@ -864,9 +933,10 @@ app.post('/api/stocks/:symbol/discussions', (req, res) => {
         const isUp = stock ? stock.changePercent > 0 : true;
         const targetMessage = content;
         
-        const key = process.env.GEMINI_API_KEY;
+        const reqKey = req.headers['x-gemini-api-key'] as string;
+        const key = reqKey || process.env.GEMINI_API_KEY;
         if (key) {
-          const client = getGemini();
+          const client = getGemini(reqKey);
           const aiResponse = await client.models.generateContent({
             model: 'gemini-3.5-flash',
             contents: `Financial Chat Bot. Reply briefly (1-2 short sentences in Korean) to this investor remark on stock ${stock?.name || symbol}. 
@@ -906,7 +976,7 @@ app.post('/api/stocks/:symbol/analysis', verifyAiAccess, async (req, res) => {
   }
 
   try {
-    const client = getGemini();
+    const client = getGemini(req.headers['x-gemini-api-key'] as string);
     const prompt = `주식 종목 분석 요청:
 종목명: ${stock.name} (${stock.symbol})
 최근 주가: ${stock.price}
@@ -985,7 +1055,7 @@ app.post('/api/stocks/refresh', async (req, res) => {
 // 7. AI-Powered Hot Theme Synthesis (Expert Consensus and Deep Infographics)
 app.post('/api/themes/ai-generate', verifyAiAccess, async (req, res) => {
   try {
-    const client = getGemini();
+    const client = getGemini(req.headers['x-gemini-api-key'] as string);
     const prompt = `요즘 주식 시장에서 가장 뜨겁게 논의되고 있는 6가지 이상의 핵심 메가 테마를 선정하고, 각 테마별로 세계 최고 수준의 투자 전문가 및 리서치 센터의 분석 가이드라인을 합성하여 깊이 있는 분석 보고서를 생성해 주십시오.
 
 요구사항:

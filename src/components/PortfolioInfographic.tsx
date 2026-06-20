@@ -230,9 +230,15 @@ ${watchlistStr}
 2. 당일 평균 변동률이 가장 돋보이는 테마 그룹과 가장 부진한 테마 그룹의 배경 심리(예: 미 금리 영향, 반도체 공급망 고도화, 경기 둔화 방어 심리 등)를 가볍게 해석하십시오.
 3. 한국어 문체로 기품있고 고차원적인 애널리스트 톤으로 작성하십시오 (최소 5문장 이상, 가감없이 솔직하고 명확하게).`;
 
+      const passcode = localStorage.getItem('sa_ai_access_code') || '';
+      const localApiKey = localStorage.getItem('local_gemini_api_key') || '';
       const aiRes = await fetch('/api/stocks/NVDA/analysis', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-ai-access-code': passcode,
+          'x-gemini-api-key': localApiKey
+        },
         body: JSON.stringify({ customPrompt: prompt })
       });
 

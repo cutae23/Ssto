@@ -7,6 +7,7 @@ import AlertsPanel from './components/AlertsPanel';
 import DiscussionForum from './components/DiscussionForum';
 import ThemeLab from './components/ThemeLab';
 import PortfolioInfographic from './components/PortfolioInfographic';
+import AiConfigPanel from './components/AiConfigPanel';
 import { 
   Star, 
   Search, 
@@ -247,7 +248,7 @@ export default function App() {
   const [selectedSymbol, setSelectedSymbol] = useState('009150');
   const [candles, setCandles] = useState<Candle[]>([]);
   const [timeframe, setTimeframe] = useState<'1m' | '5m' | '1d'>('1d');
-  const [activeTab, setActiveTab] = useState<'MONITOR' | 'THEMELAB' | 'MYSTOCKS'>('MONITOR');
+  const [activeTab, setActiveTab] = useState<'MONITOR' | 'THEMELAB' | 'MYSTOCKS' | 'AI_CONFIG'>('MONITOR');
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -361,9 +362,21 @@ export default function App() {
       setShowPasscodePrompt(true);
     };
     window.addEventListener('unauthorized-ai', handleUnauthorizedAi);
+
+    const handleShowToast = (e: any) => {
+      if (e.detail) {
+        setActiveToast({
+          id: Date.now().toString(),
+          message: e.detail.message,
+          sub: e.detail.sub
+        });
+      }
+    };
+    window.addEventListener('show-toast', handleShowToast);
     
     return () => {
       window.removeEventListener('unauthorized-ai', handleUnauthorizedAi);
+      window.removeEventListener('show-toast', handleShowToast);
     };
   }, []);
 
@@ -656,11 +669,13 @@ export default function App() {
     setAiLoading(true);
     try {
       const passcode = localStorage.getItem('sa_ai_access_code') || '';
+      const localApiKey = localStorage.getItem('local_gemini_api_key') || '';
       const res = await fetch(`/api/stocks/${symbol}/analysis`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-ai-access-code': passcode
+          'x-ai-access-code': passcode,
+          'x-gemini-api-key': localApiKey
         }
       });
       if (res.ok) {
@@ -756,7 +771,7 @@ export default function App() {
 
       {/* Primary tab views selection bar */}
       <nav className="border-b border-zinc-800 bg-zinc-950/40 px-6 py-2">
-        <div className="mx-auto flex max-w-7xl items-center gap-4">
+        <div className="mx-auto flex max-w-7xl items-center flex-wrap gap-4">
           <button
             onClick={() => setActiveTab('MONITOR')}
             className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-all ${
@@ -792,6 +807,18 @@ export default function App() {
           >
             <Star className="h-4 w-4 text-amber-400" />
             관심종목 그룹핑 & 인포그래픽 분석
+          </button>
+          <button
+            onClick={() => setActiveTab('AI_CONFIG')}
+            className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-bold transition-all ${
+              activeTab === 'AI_CONFIG'
+                ? 'border-emerald-500 text-emerald-400'
+                : 'border-transparent text-zinc-400 hover:text-zinc-300'
+            }`}
+            id="tab-aiconfig"
+          >
+            <Sparkles className="h-4 w-4 text-purple-400 animate-pulse" />
+            AI API Key 설정 & 사용법
           </button>
         </div>
       </nav>
@@ -1322,6 +1349,10 @@ export default function App() {
             watchlist={watchlist}
             onToggleWatchlist={handleToggleWatchlist}
           />
+        )}
+
+        {activeTab === 'AI_CONFIG' && (
+          <AiConfigPanel />
         )}
       </main>
 
