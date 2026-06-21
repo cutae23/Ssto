@@ -130,8 +130,12 @@ async function fetchRealStockPrices() {
   
   try {
     const promises = liveStocks.map(async (stock) => {
-      // If it's a 6-digit Korean stock code, fetch from Naver Finance Polling API
-      if (/^\d{6}$/.test(stock.symbol)) {
+      const isKrx = /^\d{6}$/.test(stock.symbol);
+      let naverData: any = null;
+      let yahooMeta: any = null;
+      
+      // 1. Fetch Naver Polling API for KRX Stocks (to get Nextrade overMarket and real-time prices)
+      if (isKrx) {
         const url = `https://polling.finance.naver.com/api/realtime/domestic/stock/${stock.symbol}`;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -145,109 +149,98 @@ async function fetchRealStockPrices() {
           });
           clearTimeout(timeoutId);
           
-          if (!response.ok) {
-            return { symbol: stock.symbol, success: false };
-          }
-          
-          const data = await response.json() as any;
-          const naverStock = data?.datas?.[0];
-          if (!naverStock) {
-            return { symbol: stock.symbol, success: false };
-          }
-          
-          const price = parseFloat(naverStock.closePriceRaw);
-          const prvCloseRaw = naverStock.compareToPreviousClosePriceRaw;
-          // compareToPreviousClosePriceRaw might be negative/positive to indicate move.
-          // Naver polling hasfluctuationsRatio and compareToPreviousClosePriceRaw
-          // Standard check: prevClose = price - change
-          const rawChange = parseFloat(prvCloseRaw) || 0;
-          const prevClose = price - rawChange;
-
-          let nxtPrice: number | undefined;
-          let nxtChange: number | undefined;
-          let nxtChangePercent: number | undefined;
-
-          if (naverStock.overMarketPriceInfo) {
-            const overPriceStr = naverStock.overMarketPriceInfo.overPrice;
-            if (overPriceStr) {
-              nxtPrice = parseFloat(overPriceStr.replace(/,/g, ''));
-            }
-            const overChangeStr = naverStock.overMarketPriceInfo.compareToPreviousClosePrice;
-            if (overChangeStr) {
-              nxtChange = parseFloat(overChangeStr.replace(/,/g, ''));
-              const signName = naverStock.overMarketPriceInfo.compareToPreviousPrice?.name;
-              if (signName === 'FALLING' || naverStock.overMarketPriceInfo.compareToPreviousPrice?.text === '하락') {
-                nxtChange = -Math.abs(nxtChange);
+          if (response.ok) {
+            const data = await response.json() as any;
+            const naverStock = data?.datas?.[0];
+            if (naverStock) {
+              const price = parseFloat(naverStock.closePriceRaw) || stock.price;
+              const compareToPreviousClosePriceRaw = naverStock.compareToPreviousClosePriceRaw;
+              const rawChange = parseFloat(compareToPreviousClosePriceRaw) || 0;
+              const prevClose = price - rawChange;
+              
+              let nxtPrice: number | undefined;
+              let nxtChange: number | undefined;
+              let nxtChangePercent: number | undefined;
+              
+              if (naverStock.overMarketPriceInfo) {
+                const overPriceStr = naverStock.overMarketPriceInfo.overPrice;
+                if (overPriceStr) {
+                  nxtPrice = parseFloat(overPriceStr.replace(/,/g, ''));
+                }
+                const overChangeStr = naverStock.overMarketPriceInfo.compareToPreviousClosePrice;
+                if (overChangeStr) {
+                  nxtChange = parseFloat(overChangeStr.replace(/,/g, ''));
+                  const signName = naverStock.overMarketPriceInfo.compareToPreviousPrice?.name;
+                  if (signName === 'FALLING' || naverStock.overMarketPriceInfo.compareToPreviousPrice?.text === '하락') {
+                    nxtChange = -Math.abs(nxtChange);
+                  }
+                }
+                const overRatioStr = naverStock.overMarketPriceInfo.fluctuationsRatio;
+                if (overRatioStr) {
+                  nxtChangePercent = parseFloat(overRatioStr);
+                  const signName = naverStock.overMarketPriceInfo.compareToPreviousPrice?.name;
+                  if (signName === 'FALLING' || naverStock.overMarketPriceInfo.compareToPreviousPrice?.text === '하락') {
+                    nxtChangePercent = -Math.abs(nxtChangePercent);
+                  }
+                }
               }
-            }
-            const overRatioStr = naverStock.overMarketPriceInfo.fluctuationsRatio;
-            if (overRatioStr) {
-              nxtChangePercent = parseFloat(overRatioStr);
-              const signName = naverStock.overMarketPriceInfo.compareToPreviousPrice?.name;
-              if (signName === 'FALLING' || naverStock.overMarketPriceInfo.compareToPreviousPrice?.text === '하락') {
-                nxtChangePercent = -Math.abs(nxtChangePercent);
-              }
+              
+              naverData = {
+                price,
+                prevClose,
+                changeRaw: rawChange,
+                volume: parseFloat(naverStock.accumulatedTradingVolumeRaw) || stock.volume,
+                open: parseFloat(naverStock.openPriceRaw) || price,
+                high: parseFloat(naverStock.highPriceRaw) || price,
+                low: parseFloat(naverStock.lowPriceRaw) || price,
+                overMarketPriceInfo: naverStock.overMarketPriceInfo,
+                nxtPrice,
+                nxtChange,
+                nxtChangePercent,
+                rawStock: naverStock
+              };
             }
           }
-          
-          return {
-            symbol: stock.symbol,
-            success: true,
-            naver: {
-              price,
-              prevClose,
-              high52Week: stock.high52Week > price ? stock.high52Week : price * 1.15,
-              low52Week: stock.low52Week < price ? stock.low52Week : price * 0.85,
-              volume: parseFloat(naverStock.accumulatedTradingVolumeRaw) || stock.volume,
-              open: parseFloat(naverStock.openPriceRaw) || price,
-              high: parseFloat(naverStock.highPriceRaw) || price,
-              low: parseFloat(naverStock.lowPriceRaw) || price,
-              nxtPrice,
-              nxtChange,
-              nxtChangePercent
-            }
-          };
         } catch (err) {
           clearTimeout(timeoutId);
-          return { symbol: stock.symbol, success: false };
-        }
-      } else {
-        // US Stocks - Fetch from Yahoo Finance API using public chart v8 endpoints
-        const yahooSymbol = getYahooTicker(stock.symbol);
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?range=1d&interval=1d`;
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
-        
-        try {
-          const response = await fetch(url, {
-            signal: controller.signal,
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36'
-            }
-          });
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            return { symbol: stock.symbol, success: false };
-          }
-          
-          const data = await response.json() as any;
-          const meta = data?.chart?.result?.[0]?.meta;
-          if (!meta) {
-            return { symbol: stock.symbol, success: false };
-          }
-          
-          return {
-            symbol: stock.symbol,
-            success: true,
-            meta
-          };
-        } catch (err) {
-          clearTimeout(timeoutId);
-          return { symbol: stock.symbol, success: false };
+          console.error(`Error fetching Naver realtime for ${stock.symbol}:`, err);
         }
       }
+      
+      // 2. Fetch Yahoo Finance for BOTH US and KRX Stocks (to get stable previous close, highs, lows, etc.)
+      const yahooSymbol = getYahooTicker(stock.symbol);
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?range=1d&interval=1d`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      
+      try {
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36'
+          }
+        });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json() as any;
+          const meta = data?.chart?.result?.[0]?.meta;
+          if (meta) {
+            yahooMeta = meta;
+          }
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        console.error(`Error fetching Yahoo chart for ${stock.symbol} (${yahooSymbol}):`, err);
+      }
+      
+      return {
+        symbol: stock.symbol,
+        success: (naverData !== null || yahooMeta !== null),
+        naver: naverData,
+        meta: yahooMeta
+      };
     });
     
     const results = await Promise.allSettled(promises);
@@ -279,14 +272,42 @@ async function fetchRealStockPrices() {
       let nxtChangePercent: number | undefined = undefined;
       
       if (entry.naver) {
-        price = entry.naver.price / factor;
-        prevClose = entry.naver.prevClose / factor;
-        high52Week = entry.naver.high52Week / factor;
-        low52Week = entry.naver.low52Week / factor;
-        volume = entry.naver.volume;
-        open = entry.naver.open / factor;
-        high = entry.naver.high / factor;
-        low = entry.naver.low / factor;
+        const naverPrice = entry.naver.price / factor;
+        const naverPrevClose = entry.naver.prevClose / factor;
+        const hasActiveNaverChange = (entry.naver.changeRaw !== 0);
+        
+        // During trading hours when there is a real-time Naver price change, use Naver.
+        if (hasActiveNaverChange) {
+          price = naverPrice;
+          prevClose = naverPrevClose;
+        } else {
+          // Off-market/Pre-market fallback: use Yahoo Finance for regular session close stats
+          if (entry.meta) {
+            price = (entry.meta.regularMarketPrice ?? naverPrice) / factor;
+            prevClose = (entry.meta.chartPreviousClose ?? naverPrevClose) / factor;
+          } else {
+            price = naverPrice;
+            prevClose = naverPrevClose !== price ? naverPrevClose : stock.prevClose;
+          }
+        }
+        
+        // Populate 52-week parameters cleanly
+        if (entry.meta) {
+          high52Week = (entry.meta.fiftyTwoWeekHigh ?? stock.high52Week) / factor;
+          low52Week = (entry.meta.fiftyTwoWeekLow ?? stock.low52Week) / factor;
+        } else {
+          high52Week = stock.high52Week > price ? stock.high52Week : price * 1.15;
+          low52Week = stock.low52Week < price ? stock.low52Week : price * 0.85;
+        }
+        
+        // Fallback for daily candles high, low & open
+        open = (entry.meta && entry.meta.regularMarketPrice) ? entry.meta.regularMarketPrice / factor : (entry.naver.open / factor);
+        high = (entry.meta && entry.meta.regularMarketDayHigh) ? entry.meta.regularMarketDayHigh / factor : (entry.naver.high / factor);
+        low = (entry.meta && entry.meta.regularMarketDayLow) ? entry.meta.regularMarketDayLow / factor : (entry.naver.low / factor);
+        
+        const naverVol = entry.naver.volume;
+        volume = (!isNaN(naverVol) && naverVol > 0) ? naverVol : (entry.meta?.regularMarketVolume ?? stock.volume);
+        
         if (entry.naver.nxtPrice !== undefined) {
           nxtPrice = entry.naver.nxtPrice / factor;
           nxtChange = entry.naver.nxtChange !== undefined ? entry.naver.nxtChange / factor : undefined;
@@ -300,8 +321,8 @@ async function fetchRealStockPrices() {
         low52Week = (meta.fiftyTwoWeekLow ?? stock.low52Week) / factor;
         volume = meta.regularMarketVolume ?? stock.volume;
         open = price;
-        high = (meta.regularMarketDayHigh ?? price) / factor;
-        low = (meta.regularMarketDayLow ?? price) / factor;
+        high = (meta.regularMarketDayHigh || meta.regularMarketPrice || price) / factor;
+        low = (meta.regularMarketDayLow || meta.regularMarketPrice || price) / factor;
       }
       
       const change = price - prevClose;
@@ -329,7 +350,7 @@ async function fetchRealStockPrices() {
       };
     });
     
-    console.log('Real stock prices updated successfully from Naver Finance and Yahoo Finance APIs.');
+    console.log('Real stock prices updated successfully from combined Naver and Yahoo pipelines.');
   } catch (err) {
     console.error('Error in fetchRealStockPrices:', err);
   }
