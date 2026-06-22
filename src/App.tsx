@@ -179,9 +179,9 @@ function StockListItem({
        </div>
 
        {/* Price changes detail column */}
-       <div className="text-right flex flex-col justify-center items-end">
+       <div className="text-right flex flex-col justify-center items-end min-w-[28%]">
          <div className="flex flex-col items-end">
-           <span className="font-mono text-xs font-black block text-zinc-100" title="KRX 정규장 종가">
+           <span className="font-mono text-xs font-black block text-zinc-100" title="KRX 정규장 종가 border-transparent">
              {stock.symbol === 'NVDA' || stock.symbol === 'TSLA' || stock.symbol === 'AAPL'
                ? `$${stock.price.toLocaleString(undefined, { minimumFractionDigits: 1 })}`
                : `₩${Math.round(stock.price).toLocaleString()}`}
@@ -195,6 +195,22 @@ function StockListItem({
          <span className={`font-mono text-[10px] font-bold block mt-0.5 ${isUp ? 'text-rose-500' : 'text-blue-500'}`}>
            {isUp ? '+' : ''}{stock.changePercent}%
          </span>
+         
+         {/* Explicit Watchlist add/delete button */}
+         <button
+           onClick={(e) => {
+             e.stopPropagation();
+             onToggleWatchlist(stock.symbol);
+           }}
+           type="button"
+           className={`mt-1 text-[9px] px-1.5 py-0.5 rounded-md font-extrabold transition-all border shrink-0 cursor-pointer ${
+             watched 
+               ? 'bg-amber-500/10 text-amber-400 border-amber-500/25 hover:bg-amber-500/20' 
+               : 'bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700 hover:text-zinc-200'
+           }`}
+         >
+           {watched ? '관심 해제' : '관심 등록'}
+         </button>
        </div>
 
        {/* Interactive hover X delete button to prune custom stock / entries */}
@@ -248,7 +264,7 @@ export default function App() {
   const [candles, setCandles] = useState<Candle[]>([]);
   const [timeframe, setTimeframe] = useState<'1m' | '5m' | '1d'>('1d');
   const [activeTab, setActiveTab] = useState<'MONITOR' | 'THEMELAB' | 'MYSTOCKS'>('MONITOR');
-  const [watchlistOnly, setWatchlistOnly] = useState(false);
+  const [watchlistOnly, setWatchlistOnly] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Custom Stocks and Live Sync configurations
@@ -834,29 +850,76 @@ export default function App() {
               {/* Filtering Controls */}
               <div className="space-y-3">
                 {/* Watchlist Quick Selection badges */}
-                <div className="space-y-1 bg-zinc-950/40 p-2.5 rounded-xl border border-zinc-800">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">★ 내 관심종목</span>
-                    {watchlist.length > 0 && <span className="text-[9px] text-zinc-600">클릭 시 바로 이동</span>}
+                <div className="space-y-1.5 bg-zinc-950/40 p-2.5 rounded-xl border border-zinc-800">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">★ 내 관심종목 ({watchlist.length})</span>
+                    
+                    {/* Watchlist Initialization/Reset buttons */}
+                    <div className="flex items-center gap-1.5 text-[9px]">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('모든 관심종목을 지우시겠습니까?')) {
+                            setWatchlist([]);
+                          }
+                        }}
+                        className="font-bold text-red-450 hover:text-red-400 transition-colors uppercase cursor-pointer"
+                        title="관심종목 전체 일괄 삭제"
+                      >
+                        전체비우기
+                      </button>
+                      <span className="text-zinc-700 font-mono">|</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('관심종목 리스트를 기본 추천 우량종목(삼성전자, 테슬라, 엔비디아)으로 리셋하시겠습니까?')) {
+                            setWatchlist(['005930', 'NVDA', 'TSLA']);
+                          }
+                        }}
+                        className="font-bold text-zinc-400 hover:text-zinc-200 transition-colors uppercase cursor-pointer"
+                        title="기본 관심종목으로 복구"
+                      >
+                        기본초기화
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  <div className="flex flex-wrap gap-1.5 mt-1">
                     {watchlist.map(sym => {
                       const st = stocks.find(s => s.symbol === sym);
                       if (!st) return null;
                       return (
-                        <button
+                        <div
                           key={sym}
-                          type="button"
-                          onClick={() => setSelectedSymbol(sym)}
-                          className={`flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all border ${
+                          className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] font-bold border transition-all ${
                             selectedSymbol === sym
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/45'
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/40'
                               : 'bg-zinc-900 text-zinc-400 border-zinc-800/80 hover:text-zinc-200 hover:border-zinc-700'
                           }`}
                         >
-                          <span className="text-amber-500">★</span>
-                          <span>{st.name}</span>
-                        </button>
+                          {/* Name select click triggers */}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSymbol(sym)}
+                            className="flex items-center gap-1 hover:opacity-80 cursor-pointer"
+                            title={`${st.name} 종목 분석 보기`}
+                          >
+                            <span className="text-amber-500">★</span>
+                            <span>{st.name}</span>
+                          </button>
+                          
+                          {/* Dedicated badge close button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleWatchlist(sym);
+                            }}
+                            className="ml-1 text-[11px] leading-none text-zinc-500 hover:text-red-400 transition-colors px-0.5 font-bold cursor-pointer"
+                            title={`${st.name} 관심종목 삭제`}
+                          >
+                            ×
+                          </button>
+                        </div>
                       );
                     })}
                     {watchlist.length === 0 && (
