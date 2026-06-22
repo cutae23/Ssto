@@ -22,6 +22,7 @@ export interface Stock {
   nxtPrice?: number;
   nxtChange?: number;
   nxtChangePercent?: number;
+  isCalibrated?: boolean;
 }
 
 export interface Candle {

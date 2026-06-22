@@ -50,7 +50,8 @@ export default function StockChart({
     high: '',
     low: '',
     high52Week: '',
-    low52Week: ''
+    low52Week: '',
+    nxtPrice: ''
   });
   const [saveStatus, setSaveStatus] = useState<'IDLE' | 'SAVING' | 'SUCCESS'>('IDLE');
 
@@ -62,7 +63,8 @@ export default function StockChart({
       high: String(stock.high ?? stock.price),
       low: String(stock.low ?? stock.price),
       high52Week: String(stock.high52Week),
-      low52Week: String(stock.low52Week)
+      low52Week: String(stock.low52Week),
+      nxtPrice: stock.nxtPrice !== undefined ? String(stock.nxtPrice) : ''
     });
     setSaveStatus('IDLE');
     setIsCalibrating(!isCalibrating);
@@ -81,7 +83,27 @@ export default function StockChart({
         high: Number(formData.high),
         low: Number(formData.low),
         high52Week: Number(formData.high52Week),
-        low52Week: Number(formData.low52Week)
+        low52Week: Number(formData.low52Week),
+        nxtPrice: formData.nxtPrice !== '' ? Number(formData.nxtPrice) : undefined,
+        resetCalibration: false
+      });
+      setSaveStatus('SUCCESS');
+      setTimeout(() => {
+        setIsCalibrating(false);
+        setSaveStatus('IDLE');
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      setSaveStatus('IDLE');
+    }
+  };
+
+  const handleResetCalibration = async () => {
+    if (!onUpdateStock) return;
+    setSaveStatus('SAVING');
+    try {
+      await onUpdateStock(stock.symbol, {
+        resetCalibration: true
       });
       setSaveStatus('SUCCESS');
       setTimeout(() => {
@@ -456,10 +478,33 @@ export default function StockChart({
 
           {isCalibrating && (
             <form onSubmit={handleCalibrateSubmit} className="mt-3 rounded-xl bg-zinc-950 p-4 border border-zinc-800 space-y-3">
-              <div className="text-xs font-bold text-emerald-400 flex items-center justify-between">
-                <span>📊 {stock.name}({stock.symbol}) 시세 변수 수치 보정</span>
+              <div className="text-xs font-bold text-emerald-400 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span>📊 {stock.name}({stock.symbol}) 시세 변수 수치 보정</span>
+                  {stock.isCalibrated && (
+                    <span className="rounded bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.2 text-[9.5px] text-rose-400 font-normal">
+                      ⚠️ 고정됨(실시간 연동 차단 중)
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px] text-zinc-500 font-normal">단위: KRW(원화) 또는 USD(달러)</span>
               </div>
+
+              {stock.isCalibrated && (
+                <div className="rounded-lg bg-zinc-900/50 p-2.5 border border-zinc-850 flex items-center justify-between">
+                  <span className="text-[10px] text-zinc-400">
+                    * 이 종목은 현재 시세 직접 교정기로 수치가 고정되어 실시간 연동에 의해 수정되지 않습니다.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleResetCalibration}
+                    disabled={saveStatus === 'SAVING'}
+                    className="rounded bg-rose-950/40 hover:bg-rose-900/50 text-rose-400 hover:text-rose-300 border border-rose-900/40 px-2 py-0.5 text-[10px] font-bold cursor-pointer transition-colors"
+                  >
+                    {saveStatus === 'SAVING' ? '처리 중...' : '실시간 시세 연동으로 복구'}
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
@@ -539,7 +584,22 @@ export default function StockChart({
                     className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 font-mono text-xs text-zinc-200 outline-none focus:border-emerald-500"
                   />
                 </div>
-                <div className="flex items-end">
+                {/^\d{6}$/.test(stock.symbol) ? (
+                  <div>
+                    <label className="block text-[10px] font-semibold text-zinc-500 mb-1">Nx 대체거래소 야간가 (선택)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.nxtPrice}
+                      onChange={(e) => setFormData({ ...formData, nxtPrice: e.target.value })}
+                      placeholder="입력 시 Nx대체 고정"
+                      className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 font-mono text-xs text-zinc-200 outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                ) : (
+                  <div className="hidden sm:block"></div>
+                )}
+                <div className="flex items-end col-span-2 sm:col-span-4 mt-1">
                   <button
                     type="submit"
                     disabled={saveStatus === 'SAVING'}

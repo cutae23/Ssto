@@ -13,7 +13,9 @@ const PORT = 3000;
 app.use(express.json());
 
 // In-Memory Live Stock Prices & Discussions to persist state during server runtime
-let liveStocks: Stock[] = JSON.parse(JSON.stringify(INITIAL_STOCKS));
+let liveStocks: Stock[] = JSON.parse(JSON.stringify(INITIAL_STOCKS)).map((stock: Stock) => {
+  return { ...stock, isCalibrated: false };
+});
 let liveDiscussions: DiscussionPost[] = [...SEED_DISCUSSIONS];
 
 // Format Market Cap from number to reader-friendly string
@@ -253,6 +255,11 @@ async function fetchRealStockPrices() {
     }
     
     liveStocks = liveStocks.map(stock => {
+      // If the stock is flagged as manually calibrated, keep all its values completely safe from background sync overthrows!
+      if (stock.isCalibrated) {
+        return stock;
+      }
+
       const entry = dataMap.get(stock.symbol);
       if (!entry) return stock;
       
@@ -267,9 +274,9 @@ async function fetchRealStockPrices() {
       
       const factor = getStockScaleFactor(stock.symbol);
       
-      let nxtPrice: number | undefined = undefined;
-      let nxtChange: number | undefined = undefined;
-      let nxtChangePercent: number | undefined = undefined;
+      let nxtPrice: number | undefined = stock.nxtPrice;
+      let nxtChange: number | undefined = stock.nxtChange;
+      let nxtChangePercent: number | undefined = stock.nxtChangePercent;
       
       if (entry.naver) {
         const naverPrice = entry.naver.price / factor;
@@ -312,6 +319,11 @@ async function fetchRealStockPrices() {
           nxtPrice = entry.naver.nxtPrice / factor;
           nxtChange = entry.naver.nxtChange !== undefined ? entry.naver.nxtChange / factor : undefined;
           nxtChangePercent = entry.naver.nxtChangePercent;
+        } else {
+          // Retain previous Nextrade data instead of destroying it
+          nxtPrice = stock.nxtPrice;
+          nxtChange = stock.nxtChange;
+          nxtChangePercent = stock.nxtChangePercent;
         }
       } else if (entry.meta) {
         const meta = entry.meta;
@@ -886,7 +898,20 @@ app.get('/api/stocks/:symbol/discussions', (req, res) => {
 // Update specific stock metrics / calibrate price
 app.post('/api/stocks/:symbol/update', (req, res) => {
   const { symbol } = req.params;
-  const { price, prevClose, open, high, low, high52Week, low52Week, volume } = req.body;
+  const { 
+    price, 
+    prevClose, 
+    open, 
+    high, 
+    low, 
+    high52Week, 
+    low52Week, 
+    volume, 
+    nxtPrice, 
+    nxtChange, 
+    nxtChangePercent, 
+    resetCalibration 
+  } = req.body;
   
   const stockIndex = liveStocks.findIndex(s => s.symbol === symbol);
   if (stockIndex === -1) {
@@ -896,6 +921,23 @@ app.post('/api/stocks/:symbol/update', (req, res) => {
   
   const current = liveStocks[stockIndex];
   
+  let newIsCalibrated = current.isCalibrated;
+  if (resetCalibration === true) {
+    newIsCalibrated = false;
+  } else if (
+    price !== undefined || 
+    prevClose !== undefined || 
+    open !== undefined || 
+    high !== undefined || 
+    low !== undefined || 
+    high52Week !== undefined || 
+    low52Week !== undefined || 
+    volume !== undefined ||
+    nxtPrice !== undefined
+  ) {
+    newIsCalibrated = true;
+  }
+
   const newPrice = price !== undefined ? Number(price) : current.price;
   const newPrevClose = prevClose !== undefined ? Number(prevClose) : current.prevClose;
   const newOpen = open !== undefined ? Number(open) : (current.open ?? newPrice);
@@ -905,6 +947,18 @@ app.post('/api/stocks/:symbol/update', (req, res) => {
   const newLow52 = low52Week !== undefined ? Number(low52Week) : current.low52Week;
   const newVolume = volume !== undefined ? Number(volume) : current.volume;
   
+  // Handled calibration for Nextrade over-market parameters
+  let newNxtPrice = nxtPrice !== undefined ? (nxtPrice === null ? undefined : Number(nxtPrice)) : current.nxtPrice;
+  let newNxtChange = nxtChange !== undefined ? (nxtChange === null ? undefined : Number(nxtChange)) : current.nxtChange;
+  let newNxtChangePercent = nxtChangePercent !== undefined ? (nxtChangePercent === null ? undefined : Number(nxtChangePercent)) : current.nxtChangePercent;
+  
+  // If user calibrated a new nxtPrice but nxtChange/nxtChangePercent are omitted, calculate them relative to prevClose
+  if (nxtPrice !== undefined && nxtChange === undefined && newNxtPrice !== undefined) {
+    const calcChange = newNxtPrice - newPrevClose;
+    newNxtChange = Math.round(calcChange * 100) / 100;
+    newNxtChangePercent = Math.round((calcChange / newPrevClose) * 100 * 100) / 100;
+  }
+
   const change = newPrice - newPrevClose;
   const changePercent = newPrevClose !== 0 ? (change / newPrevClose) * 100 : 0;
   
@@ -923,7 +977,11 @@ app.post('/api/stocks/:symbol/update', (req, res) => {
     change: Math.round(change * 100) / 100,
     changePercent: Math.round(changePercent * 100) / 100,
     kneeShoulderIndex: stats.index,
-    kneeShoulderStatus: stats.status
+    kneeShoulderStatus: stats.status,
+    nxtPrice: newNxtPrice,
+    nxtChange: newNxtChange,
+    nxtChangePercent: newNxtChangePercent,
+    isCalibrated: newIsCalibrated
   };
   
   liveStocks[stockIndex] = updatedStock;
