@@ -42,13 +42,11 @@ export default function DiscussionForum({ stock, nickname }: DiscussionForumProp
     setLoading(true);
     try {
       const passcode = localStorage.getItem('sa_ai_access_code') || '';
-      const localApiKey = localStorage.getItem('local_gemini_api_key') || '';
       const res = await fetch(`/api/stocks/${stock.symbol}/discussions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-ai-access-code': passcode,
-          'x-gemini-api-key': localApiKey
         },
         body: JSON.stringify({
           username: nickname,

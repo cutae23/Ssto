@@ -164,7 +164,8 @@ async function fetchRealStockPrices() {
               let nxtChange: number | undefined;
               let nxtChangePercent: number | undefined;
               
-              if (naverStock.overMarketPriceInfo) {
+              const supportsNextrade = stock.name.includes('Nx대체') || stock.isCalibrated;
+              if (supportsNextrade && naverStock.overMarketPriceInfo) {
                 const overPriceStr = naverStock.overMarketPriceInfo.overPrice;
                 if (overPriceStr) {
                   nxtPrice = parseFloat(overPriceStr.replace(/,/g, ''));
@@ -315,15 +316,20 @@ async function fetchRealStockPrices() {
         const naverVol = entry.naver.volume;
         volume = (!isNaN(naverVol) && naverVol > 0) ? naverVol : (entry.meta?.regularMarketVolume ?? stock.volume);
         
-        if (entry.naver.nxtPrice !== undefined) {
+        const supportsNextrade = stock.name.includes('Nx대체') || stock.isCalibrated;
+        if (supportsNextrade && entry.naver.nxtPrice !== undefined) {
           nxtPrice = entry.naver.nxtPrice / factor;
           nxtChange = entry.naver.nxtChange !== undefined ? entry.naver.nxtChange / factor : undefined;
           nxtChangePercent = entry.naver.nxtChangePercent;
-        } else {
+        } else if (supportsNextrade) {
           // Retain previous Nextrade data instead of destroying it
           nxtPrice = stock.nxtPrice;
           nxtChange = stock.nxtChange;
           nxtChangePercent = stock.nxtChangePercent;
+        } else {
+          nxtPrice = undefined;
+          nxtChange = undefined;
+          nxtChangePercent = undefined;
         }
       } else if (entry.meta) {
         const meta = entry.meta;
@@ -488,24 +494,11 @@ function getCleanKey(key?: string): string {
   return key.trim().replace(/^['"]|['"]$/g, '');
 }
 
-function getGemini(reqApiKey?: string): GoogleGenAI {
-  const rawKey = reqApiKey || process.env.GEMINI_API_KEY;
-  const key = getCleanKey(rawKey);
+function getGemini(): GoogleGenAI {
+  const key = getCleanKey(process.env.GEMINI_API_KEY);
   
   if (!key) {
     throw new Error('GEMINI_API_KEY environment variable is required in settings/secrets.');
-  }
-  
-  if (reqApiKey) {
-    // If client provided an on-the-fly key, create a fresh client instance to prevent cross-contamination
-    return new GoogleGenAI({
-      apiKey: key,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        }
-      }
-    });
   }
 
   if (!aiClient) {
@@ -558,14 +551,12 @@ app.get('/api/ai-config-status', (req, res) => {
 
 // Live test endpoint for client or developer API keys
 app.post('/api/test-gemini', async (req, res) => {
-  const customKey = req.headers['x-gemini-api-key'] as string;
-  const rawKeyToUse = (customKey && customKey.trim() !== '') ? customKey.trim() : process.env.GEMINI_API_KEY;
-  const keyToUse = getCleanKey(rawKeyToUse);
+  const keyToUse = getCleanKey(process.env.GEMINI_API_KEY);
 
   if (!keyToUse) {
     res.status(400).json({ 
       success: false, 
-      error: '제공된 API 키가 없으며, 서버 내 환경변수(GEMINI_API_KEY)도 구성되어 있지 않습니다.' 
+      error: '서버 내 환경변수(GEMINI_API_KEY)가 구성되어 있지 않습니다.' 
     });
     return;
   }
@@ -589,7 +580,7 @@ app.post('/api/test-gemini', async (req, res) => {
     if (text) {
       res.json({ 
         success: true, 
-        mode: customKey ? 'USER_KEY' : 'SERVER_KEY' 
+        mode: 'SERVER_KEY' 
       });
     } else {
       res.json({ 
@@ -1022,10 +1013,9 @@ app.post('/api/stocks/:symbol/discussions', (req, res) => {
         const isUp = stock ? stock.changePercent > 0 : true;
         const targetMessage = content;
         
-        const reqKey = req.headers['x-gemini-api-key'] as string;
-        const key = reqKey || process.env.GEMINI_API_KEY;
+        const key = process.env.GEMINI_API_KEY;
         if (key) {
-          const client = getGemini(reqKey);
+          const client = getGemini();
           const aiResponse = await client.models.generateContent({
             model: 'gemini-3.5-flash',
             contents: `Financial Chat Bot. Reply briefly (1-2 short sentences in Korean) to this investor remark on stock ${stock?.name || symbol}. 
@@ -1065,7 +1055,7 @@ app.post('/api/stocks/:symbol/analysis', verifyAiAccess, async (req, res) => {
   }
 
   try {
-    const client = getGemini(req.headers['x-gemini-api-key'] as string);
+    const client = getGemini();
     const prompt = `주식 종목 분석 요청:
 종목명: ${stock.name} (${stock.symbol})
 최근 주가: ${stock.price}
@@ -1144,7 +1134,7 @@ app.post('/api/stocks/refresh', async (req, res) => {
 // 7. AI-Powered Hot Theme Synthesis (Expert Consensus and Deep Infographics)
 app.post('/api/themes/ai-generate', verifyAiAccess, async (req, res) => {
   try {
-    const client = getGemini(req.headers['x-gemini-api-key'] as string);
+    const client = getGemini();
     const prompt = `요즘 주식 시장에서 가장 뜨겁게 논의되고 있는 6가지 이상의 핵심 메가 테마를 선정하고, 각 테마별로 세계 최고 수준의 투자 전문가 및 리서치 센터의 분석 가이드라인을 합성하여 깊이 있는 분석 보고서를 생성해 주십시오.
 
 요구사항:

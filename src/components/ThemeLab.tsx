@@ -47,13 +47,11 @@ export default function ThemeLab({ onAddStockToWatchlist, watchlistSymbols }: Th
       }, 1500);
 
       const passcode = localStorage.getItem('sa_ai_access_code') || '';
-      const localApiKey = localStorage.getItem('local_gemini_api_key') || '';
       const res = await fetch('/api/themes/ai-generate', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'x-ai-access-code': passcode,
-          'x-gemini-api-key': localApiKey
         }
       });
 

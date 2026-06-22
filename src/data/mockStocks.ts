@@ -39,7 +39,7 @@ export const INITIAL_STOCKS: Stock[] = [
   },
   {
     symbol: '000660',
-    name: 'SK하이닉스',
+    name: 'SK하이닉스 (Nx대체)',
     nameEn: 'SK hynix',
     price: 216200,
     prevClose: 210100,
@@ -552,7 +552,7 @@ export const INITIAL_STOCKS: Stock[] = [
   },
   {
     symbol: '005930',
-    name: '삼성전자',
+    name: '삼성전자 (Nx대체)',
     nameEn: 'Samsung Electronics',
     price: 78200,
     prevClose: 77500,

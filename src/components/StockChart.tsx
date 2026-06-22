@@ -584,7 +584,7 @@ export default function StockChart({
                     className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 font-mono text-xs text-zinc-200 outline-none focus:border-emerald-500"
                   />
                 </div>
-                {/^\d{6}$/.test(stock.symbol) ? (
+                {/^\d{6}$/.test(stock.symbol) && stock.name.includes('Nx대체') ? (
                   <div>
                     <label className="block text-[10px] font-semibold text-zinc-500 mb-1">Nx 대체거래소 야간가 (선택)</label>
                     <input
