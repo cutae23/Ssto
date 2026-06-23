@@ -208,10 +208,20 @@ export default function StockChart({
       {/* Chart Title and Timeframe toggler */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap text-zinc-100">
             <span className="text-sm font-semibold tracking-wide text-zinc-400 font-mono uppercase">{stock.symbol}</span>
-            <span className="text-lg font-bold text-zinc-100">{stock.name}</span>
+            <span className="text-lg font-bold">{stock.name.replace(' (Nx대체)', '')}</span>
             <span className="text-xs text-zinc-500 font-mono mr-1">{stock.nameEn}</span>
+            
+            {/* Exchange Badges */}
+            <span className="inline-flex items-center gap-1 rounded bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 text-[9px] font-black text-rose-450 uppercase tracking-widest leading-none">
+              KRX 한국거래소
+            </span>
+            {(stock.nxtPrice !== undefined || stock.name.includes('Nx대체')) && (
+              <span className="inline-flex items-center gap-1 rounded bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 text-[9px] font-black text-indigo-400 uppercase tracking-widest leading-none">
+                Nextrade 대체거래소 (ATS)
+              </span>
+            )}
             
             {isRealData ? (
               <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">

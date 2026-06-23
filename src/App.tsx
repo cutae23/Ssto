@@ -139,6 +139,9 @@ function StockListItem({
     prevPriceRef.current = stock.price;
   }, [stock.price]);
 
+  const hasNextrade = stock.nxtPrice !== undefined || stock.name.includes('Nx대체');
+  const cleanName = stock.name.replace(' (Nx대체)', '');
+
   return (
     <div
       onClick={onSelect}
@@ -154,7 +157,7 @@ function StockListItem({
           : ''
       }`}
     >
-      <div className="text-left flex items-start gap-2 max-w-[65%]">
+      <div className="text-left flex items-start gap-2 max-w-[55%]">
         {/* Watch / Star Toggle Button */}
         <button
           onClick={(e) => {
@@ -169,8 +172,11 @@ function StockListItem({
 
         <div>
           <div className="font-sans text-xs font-bold text-zinc-100 flex items-center gap-1.5 flex-wrap">
-            {stock.name}
+            <span>{cleanName}</span>
             <span className="font-mono text-[9px] text-zinc-500">{stock.symbol}</span>
+            {hasNextrade && (
+              <span className="font-sans text-[8px] font-black text-indigo-400 bg-indigo-500/15 border border-indigo-500/20 px-1 rounded">Nx 대체가능</span>
+            )}
           </div>
           <span className="text-[10px] text-zinc-500 block mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
             {stock.kneeShoulderStatus === 'KNEE' ? '🟢 저점 무릎' : stock.kneeShoulderStatus === 'FOOT' ? '🔵 극저평가 무릎이하' : stock.kneeShoulderStatus === 'SHOULDER' ? '🔴 매수경계 어깨' : stock.kneeShoulderStatus === 'HEAD' ? '⚠️ 최고조 머리' : '🟡 보류 허리'} (지수: {stock.kneeShoulderIndex}%)
@@ -179,22 +185,36 @@ function StockListItem({
        </div>
 
        {/* Price changes detail column */}
-       <div className="text-right flex flex-col justify-center items-end min-w-[28%]">
-         <div className="flex flex-col items-end">
-           <span className="font-mono text-xs font-black block text-zinc-100" title="KRX 정규장 종가 border-transparent">
-             {stock.symbol === 'NVDA' || stock.symbol === 'TSLA' || stock.symbol === 'AAPL'
-               ? `$${stock.price.toLocaleString(undefined, { minimumFractionDigits: 1 })}`
-               : `₩${Math.round(stock.price).toLocaleString()}`}
-           </span>
-           {stock.nxtPrice !== undefined && (
-             <span className="font-sans text-[8.5px] font-bold text-indigo-400 bg-indigo-500/10 px-1 py-0.2 rounded mt-0.5" title="Nextrade 대체거래소 야간 종가">
-               Nx 대체: ₩{Math.round(stock.nxtPrice).toLocaleString()}
+       <div className="text-right flex flex-col justify-center items-end shrink-0 max-w-[45%]">
+         {/* KRX Box */}
+         <div className="bg-zinc-950/70 border border-zinc-850 px-2 py-0.5 rounded-lg text-right w-full mb-1">
+           <div className="flex items-center justify-between gap-2">
+             <span className="text-[7.5px] text-rose-400/80 font-black uppercase shrink-0">KRX</span>
+             <span className="font-mono text-[11px] font-black text-zinc-100">
+               {stock.symbol === 'NVDA' || stock.symbol === 'TSLA' || stock.symbol === 'AAPL'
+                 ? `$${stock.price.toLocaleString(undefined, { minimumFractionDigits: 1 })}`
+                 : `₩${Math.round(stock.price).toLocaleString()}`}
              </span>
-           )}
+           </div>
+           <div className={`font-mono text-[9.5px] font-bold text-right ${isUp ? 'text-rose-500' : 'text-blue-500'}`}>
+             {isUp ? '+' : ''}{stock.changePercent}%
+           </div>
          </div>
-         <span className={`font-mono text-[10px] font-bold block mt-0.5 ${isUp ? 'text-rose-500' : 'text-blue-500'}`}>
-           {isUp ? '+' : ''}{stock.changePercent}%
-         </span>
+
+         {/* Nextrade (Nx) Alternate Price Box */}
+         {stock.nxtPrice !== undefined ? (
+           <div className="bg-indigo-500/5 border border-indigo-500/20 px-2 py-0.5 rounded-lg text-right w-full mb-1">
+             <div className="flex items-center justify-between gap-1.5">
+               <span className="text-[7.5px] text-indigo-400 font-black uppercase shrink-0">Nx</span>
+               <span className="font-mono text-[11px] font-black text-indigo-300">
+                 ₩{Math.round(stock.nxtPrice).toLocaleString()}
+               </span>
+             </div>
+             <div className={`font-mono text-[9.5px] font-bold text-right ${stock.nxtChangePercent !== undefined && stock.nxtChangePercent >= 0 ? 'text-indigo-400' : 'text-blue-400'}`}>
+               {stock.nxtChangePercent !== undefined && stock.nxtChangePercent >= 0 ? '+' : ''}{stock.nxtChangePercent}%
+             </div>
+           </div>
+         ) : null}
          
          {/* Explicit Watchlist add/delete button */}
          <button
@@ -203,13 +223,13 @@ function StockListItem({
              onToggleWatchlist(stock.symbol);
            }}
            type="button"
-           className={`mt-1 text-[9px] px-1.5 py-0.5 rounded-md font-extrabold transition-all border shrink-0 cursor-pointer ${
+           className={`mt-0.5 text-[9px] px-1.5 py-0.5 rounded font-extrabold transition-all border shrink-0 cursor-pointer ${
              watched 
                ? 'bg-amber-500/10 text-amber-400 border-amber-500/25 hover:bg-amber-500/20' 
                : 'bg-zinc-800 text-zinc-400 border-zinc-700/50 hover:bg-zinc-700 hover:text-zinc-200'
            }`}
          >
-           {watched ? '관심 해제' : '관심 등록'}
+           {watched ? '★ 관심해제' : '☆ 관심등록'}
          </button>
        </div>
 
@@ -226,8 +246,8 @@ function StockListItem({
          <span className="text-[10px] font-bold">×</span>
        </button>
      </div>
-   );
- }
+  );
+}
 
 export default function App() {
   // --- Guest Mode States (Synchronised with LocalStorage) ---
@@ -266,6 +286,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'MONITOR' | 'THEMELAB' | 'MYSTOCKS'>('MONITOR');
   const [watchlistOnly, setWatchlistOnly] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exchangeFilter, setExchangeFilter] = useState<'ALL' | 'KRX' | 'NEXTRADE'>('ALL');
 
   // Custom Stocks and Live Sync configurations
   const [isLiveSyncEnabled, setIsLiveSyncEnabled] = useState(false);
@@ -735,6 +756,12 @@ export default function App() {
     // If we have a text search query, allow seeing matching stocks even block is on
     if (watchlistOnly && !query && !watchlist.includes(stock.symbol)) return false;
     
+    // Exchange market division filter
+    if (exchangeFilter === 'NEXTRADE') {
+      const hasNx = stock.nxtPrice !== undefined || stock.name.includes('Nx대체');
+      if (!hasNx) return false;
+    }
+    
     if (!query) return true;
 
     return (
@@ -901,10 +928,13 @@ export default function App() {
                             type="button"
                             onClick={() => setSelectedSymbol(sym)}
                             className="flex items-center gap-1 hover:opacity-80 cursor-pointer"
-                            title={`${st.name} 종목 분석 보기`}
+                            title={`${st.name.replace(' (Nx대체)', '')} 종목 분석 보기`}
                           >
                             <span className="text-amber-500">★</span>
-                            <span>{st.name}</span>
+                            <span>{st.name.replace(' (Nx대체)', '')}</span>
+                            {(st.nxtPrice !== undefined || st.name.includes('Nx대체')) && (
+                              <span className="text-[8px] text-indigo-400 font-extrabold px-1 bg-indigo-500/10 rounded ml-0.5">Nx</span>
+                            )}
                           </button>
                           
                           {/* Dedicated badge close button */}
@@ -957,6 +987,43 @@ export default function App() {
                   <span className="font-mono text-[10px] text-zinc-500">
                     전체: {stocks.length}개 종목
                   </span>
+                </div>
+
+                {/* --- Market Divisions Tab (KRX vs Nextrade (Nx)) --- */}
+                <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800/80">
+                  <button
+                    onClick={() => setExchangeFilter('ALL')}
+                    type="button"
+                    className={`py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      exchangeFilter === 'ALL'
+                        ? 'bg-zinc-850 text-zinc-100 shadow border border-zinc-700/50'
+                        : 'text-zinc-500 hover:text-zinc-300 shadow-none'
+                    }`}
+                  >
+                    전체 시장 ({stocks.length})
+                  </button>
+                  <button
+                    onClick={() => setExchangeFilter('KRX')}
+                    type="button"
+                    className={`py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      exchangeFilter === 'KRX'
+                        ? 'bg-rose-500/10 text-rose-400 border border-rose-500/25'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    KRX 한국거래소
+                  </button>
+                  <button
+                    onClick={() => setExchangeFilter('NEXTRADE')}
+                    type="button"
+                    className={`py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                      exchangeFilter === 'NEXTRADE'
+                        ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/25'
+                        : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    Nextrade 대체(Nx)
+                  </button>
                 </div>
 
                 {/* --- Live Sync Config Switch --- */}
