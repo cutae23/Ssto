@@ -1,6 +1,6 @@
 {
-  "name": "Remix: Stock Analysis App",
-  "description": "실시간 차트, 모의 투자 대시보드, 관심종목 알림 설정 및 테마별 분석과 AI를 이용한 상승/하락 요인 분석 기능이 포함된 종합 주식 분석 애플리케이션",
+  "name": "Vision Market AI - Capture Chart & Macroeconomic Analyst",
+  "description": "사용자가 캡처한 주식 차트나 경제 지표 이미지를 업로드하면, 사용자의 투자 성향과 연동하여 최신 글로벌 거시 경제 상황, 기술적 차트 판독 결과, 그리고 개인 최적화 전술적 대응 가이드를 도출하는 AI 멀티모달 분석대시보드",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

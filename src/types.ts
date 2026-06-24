@@ -101,3 +101,49 @@ export interface AiAnalysisReport {
   investmentVerdict: string; // 종합 투자 판단 (매수, 보수, 관망 등)
   analyzedAt: string;
 }
+
+export interface UserProfile {
+  riskTolerance: 'aggressive' | 'moderate' | 'conservative';
+  horizon: 'short' | 'mid' | 'long';
+  region: 'krx' | 'us' | 'global';
+  interests: string;
+  extraDetails: string;
+}
+
+export interface PortfolioHolding {
+  name: string;
+  ticker?: string;
+  purchasePrice?: number;
+  currentPrice?: number;
+  quantity?: number;
+  evaluationAmount?: number;
+  profitLoss?: number;
+  returnPercent?: number;
+  marketPosition?: '발' | '무릎' | '허리' | '어깨' | '머리';
+  actionOpinion?: '적극매수' | '추가매수' | '관망유지' | '비중축소' | '교체매도';
+  individualVerdict?: string;
+}
+
+export interface PortfolioSummary {
+  totalPurchaseAmount?: number;
+  totalEvaluationAmount?: number;
+  totalProfitLoss?: number;
+  totalReturnPercent?: number;
+  deposit?: number;
+}
+
+export interface CaptureAnalysisResult {
+  targetTicker: string;               // 판독되거나 사용자가 산 종목/지수명
+  marketPosition: '발' | '무릎' | '허리' | '어깨' | '머리'; // 주가 위치 판정 (발, 무릎, 허리, 어깨, 머리)
+  marketPositionDescription: string;   // 주가 위치 판정 이유 (현재 위치 진단 상세 설명)
+  actionPlan: string;                 // 앞으로의 권장 핵심 행동 (예: "분할 매수 개시", "보유 및 일부 실익 실현", "적극 관망", "전량 비중 축소")
+  actionPlanDetail: string;           // 구체적으로 어떻게 행동해야 하는지에 대한 조언 (구체적 비중 제어 전략)
+  macroBackground: string;            // 거시경제적 배경 및 금리/유동성 영향도 (왜 오르고 떨어지는지에 대한 배경)
+  technicalBackground: string;        // 차트와 수급 등 기술적 분석 배경
+  suitabilityScore: number;           // 성향 적합도 점수 (1~100)
+  suitabilityComment: string;         // 나의 투자 성향 및 조건 대비 종합 적합도 피드백
+  warningSignals: string[];           // 경계해야 할 핵심 리스크 징후 3가지
+  isPortfolio?: boolean;               // 포트폴리오(잔고/보유) 캡처 여부
+  portfolioSummary?: PortfolioSummary; // 포트폴리오 요약 정보
+  portfolioHoldings?: PortfolioHolding[]; // 개별 보유 종목 목록
+}
