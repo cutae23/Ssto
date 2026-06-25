@@ -148,10 +148,12 @@ export default function AiChatPanel({ portfolio, profile }: AiChatPanelProps) {
       // Gather relevant chat history up to last 12 messages to prevent payload bloat
       const historyPayload = updatedMessages.slice(0, -1);
 
+      const userApiKey = localStorage.getItem('custom_gemini_api_key') || '';
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Gemini-Api-Key': userApiKey,
         },
         body: JSON.stringify({
           message: query,

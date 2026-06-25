@@ -487,9 +487,6 @@ function simulateMicroFluctuations() {
 // Tick simulated live stock trade desk prices every 3 seconds!
 setInterval(simulateMicroFluctuations, 3000);
 
-// Lazy-initialization helper for Gemini as recommended in rules
-let aiClient: GoogleGenAI | null = null;
-
 function getCleanKey(key?: string): string {
   if (!key) return '';
   return key.trim().replace(/^['"]|['"]$/g, '');
@@ -506,24 +503,43 @@ function safeJsonParse(text: string): any {
   return JSON.parse(cleaned.trim());
 }
 
-function getGemini(): GoogleGenAI {
-  const key = getCleanKey(process.env.GEMINI_API_KEY);
+// Dynamic initialization helper for Gemini supporting standard API keys, Google OAuth2 bearer tokens (ya29.), and client-provided custom keys
+function getGemini(customKey?: string): GoogleGenAI {
+  const reqKey = customKey ? (customKey as string) : '';
+  const key = getCleanKey(reqKey || process.env.GEMINI_API_KEY);
   
   if (!key) {
-    throw new Error('GEMINI_API_KEY environment variable is required in settings/secrets.');
+    throw new Error('GEMINI_API_KEY가 존재하지 않습니다. 우측 상단의 AI Studio Secrets 메뉴에 설정하거나, 앱 우측 상단의 [Gemini API 개인키 설정] 칸에 개인 API 키를 입력해 주세요.');
   }
 
-  if (!aiClient) {
-    aiClient = new GoogleGenAI({
-      apiKey: key,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
+  const isOAuth = key.startsWith('ya29.');
+  if (isOAuth) {
+    const originalEnvKey = process.env.GEMINI_API_KEY;
+    // Temporarily clear to prevent the SDK from auto-loading it from process.env as apiKey
+    delete process.env.GEMINI_API_KEY;
+    try {
+      return new GoogleGenAI({
+        apiKey: '', // Empty string to prevent appending ?key=
+        httpOptions: {
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'User-Agent': 'aistudio-build',
+          }
         }
-      }
-    });
+      });
+    } finally {
+      process.env.GEMINI_API_KEY = originalEnvKey;
+    }
   }
-  return aiClient;
+
+  return new GoogleGenAI({
+    apiKey: key,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      }
+    }
+  });
 }
 
 // Authentication middleware to restrict Gemini API usage on the shared link
@@ -1067,7 +1083,8 @@ app.post('/api/stocks/:symbol/analysis', verifyAiAccess, async (req, res) => {
   }
 
   try {
-    const client = getGemini();
+    const customApiKey = req.headers['x-gemini-api-key'] || req.headers['X-Gemini-Api-Key'];
+    const client = getGemini(customApiKey as string);
     const prompt = `주식 종목 분석 요청:
 종목명: ${stock.name} (${stock.symbol})
 최근 주가: ${stock.price}
@@ -1146,7 +1163,8 @@ app.post('/api/stocks/refresh', async (req, res) => {
 // 7. AI-Powered Hot Theme Synthesis (Expert Consensus and Deep Infographics)
 app.post('/api/themes/ai-generate', verifyAiAccess, async (req, res) => {
   try {
-    const client = getGemini();
+    const customApiKey = req.headers['x-gemini-api-key'] || req.headers['X-Gemini-Api-Key'];
+    const client = getGemini(customApiKey as string);
     const prompt = `요즘 주식 시장에서 가장 뜨겁게 논의되고 있는 6가지 이상의 핵심 메가 테마를 선정하고, 각 테마별로 세계 최고 수준의 투자 전문가 및 리서치 센터의 분석 가이드라인을 합성하여 깊이 있는 분석 보고서를 생성해 주십시오.
 
 요구사항:
@@ -1322,7 +1340,8 @@ app.post('/api/analyze-capture', async (req, res) => {
   const regionKorean = regionMap[userProfile.region] || userProfile.region;
 
   try {
-    const ai = getGemini();
+    const customApiKey = req.headers['x-gemini-api-key'] || req.headers['X-Gemini-Api-Key'];
+    const ai = getGemini(customApiKey as string);
 
     // Clean base64 header if present
     let base64Part = image;
@@ -1464,10 +1483,17 @@ ${targetPrice ? `- 사용자의 희망 목표가: ${targetPrice}` : ''}
       return;
     }
     
-    const errMsg = err.message || '알 수 없는 서버 오류가 발생했습니다.';
+    let errMsg = err.message || '알 수 없는 서버 오류가 발생했습니다.';
     const status = err.status || 500;
-    res.status(status).json({
-      error: `이미지 분석에 실패했습니다: ${errMsg} (상태 코드: ${status}). 캡처된 이미지가 제대로 분석되지 않으면 모조(Fallback) 보고서를 출력하지 않고 오류로 처리합니다.`
+    
+    // Check for 503 / high demand / unavailable
+    if (status === 503 || (err.message && (err.message.includes('503') || err.message.includes('demand') || err.message.includes('UNAVAILABLE') || err.message.includes('temporary')))) {
+      errMsg = '구글 Gemini AI 모델이 현재 일시적으로 트래픽 폭주(High Demand) 상태입니다. 잠시 후 다시 이미지를 업로드하고 분석을 시도해 주세요.';
+    }
+    
+    // Always use 400 (Bad Request) instead of 503/500 to prevent Cloud Run/ingress load balancers from intercepting and returning standard HTML outage pages
+    res.status(400).json({
+      error: `이미지 분석에 실패했습니다: ${errMsg} (상태 코드: ${status}).`
     });
   }
 });
@@ -1482,7 +1508,8 @@ app.post('/api/chat', verifyAiAccess, async (req, res) => {
   }
 
   try {
-    const ai = getGemini();
+    const customApiKey = req.headers['x-gemini-api-key'] || req.headers['X-Gemini-Api-Key'];
+    const ai = getGemini(customApiKey as string);
 
     const formattedHistory = history.map((h: any) => ({
       role: h.role === 'model' ? 'model' : 'user',

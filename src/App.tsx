@@ -23,7 +23,8 @@ import {
   LayoutDashboard,
   Cpu,
   Layers,
-  MessageSquare
+  MessageSquare,
+  Key
 } from 'lucide-react';
 import { UserProfile, CaptureAnalysisResult, PortfolioHolding, PortfolioSummary } from './types';
 import AiChatPanel from './components/AiChatPanel';
@@ -283,6 +284,11 @@ export default function App() {
   const [selectedHoldingForDetail, setSelectedHoldingForDetail] = useState<PortfolioHolding | null>(null);
   const [activeResultTab, setActiveResultTab] = useState<'comprehensive' | 'individual' | 'sectorAnalysis' | 'aiChat'>('comprehensive');
 
+  // Custom Gemini API Key configuration
+  const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('custom_gemini_api_key') || '');
+  const [apiKeyInput, setApiKeyInput] = useState<string>(() => localStorage.getItem('custom_gemini_api_key') || '');
+  const [showApiKeySetting, setShowApiKeySetting] = useState<boolean>(false);
+
   // Expandable investor profile configuration
   const [showProfile, setShowProfile] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
@@ -393,6 +399,7 @@ export default function App() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Gemini-Api-Key': apiKey,
           },
           body: JSON.stringify({
             image: selectedImage,
@@ -434,7 +441,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans flex flex-col antialiased selection:bg-indigo-500/30">
       {/* 1. Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 bg-gradient-to-tr from-indigo-600 to-rose-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/10">
             <Sparkles className="h-5 w-5 text-white animate-pulse" />
@@ -448,13 +455,130 @@ export default function App() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-2.5 py-1 text-[11px] font-bold text-indigo-400 font-mono">
+        <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end">
+          {/* Gemini API Key configuration button */}
+          <button
+            onClick={() => setShowApiKeySetting(!showApiKeySetting)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all border cursor-pointer ${
+              apiKey 
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 shadow-sm shadow-emerald-500/5' 
+                : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20 shadow-sm shadow-amber-500/5'
+            }`}
+          >
+            <Key className="h-3.5 w-3.5 animate-pulse" />
+            {apiKey ? 'Gemini 개인 키 활성화됨' : 'Gemini API 개인키 설정'}
+          </button>
+
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-2.5 py-1.5 text-[11px] font-bold text-indigo-400 font-mono">
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
             OCR + MULTIMODAL AI PORT
           </span>
         </div>
       </header>
+
+      {/* Gemini API Key Expandable Panel */}
+      <AnimatePresence>
+        {showApiKeySetting && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-b border-zinc-900 bg-zinc-900/40 overflow-hidden"
+          >
+            <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-6 items-start justify-between">
+              {/* Instructions */}
+              <div className="flex-1 space-y-3">
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <Key className="h-4 w-4 text-indigo-400" />
+                  Gemini API 개인 키(Secret Key) 발급 및 등록 가이드
+                </h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  구글 AI Studio에서 누구나 평생 무료로 API 키를 즉시 발급받아 한도 제약 없는 고속 진단 분석 기능을 가동할 수 있습니다.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] text-zinc-300">
+                  <div className="bg-zinc-950/40 p-2.5 rounded-xl border border-zinc-850">
+                    <span className="text-indigo-400 font-bold">1단계. AI Studio 접속</span>
+                    <p className="text-zinc-400 mt-1">
+                      <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline hover:text-indigo-300 font-bold inline-flex items-center gap-0.5">
+                        구글 AI Studio 웹사이트 (aistudio.google.com) <ArrowUpRight className="h-3 w-3" />
+                      </a>
+                      에 구글 계정으로 로그인합니다.
+                    </p>
+                  </div>
+                  <div className="bg-zinc-950/40 p-2.5 rounded-xl border border-zinc-850">
+                    <span className="text-indigo-400 font-bold">2단계. API 키 생성 및 복사</span>
+                    <p className="text-zinc-400 mt-1">
+                      좌측 상단 또는 화면 중앙의 <span className="text-white font-semibold">"Get API key"</span> 버튼 클릭 후, <span className="text-white font-semibold">"Create API key"</span> 버튼을 눌러 발급된 <span className="text-amber-400 font-mono">AIzaSy...</span> 형태의 키를 복사합니다.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-zinc-500">
+                  ※ 입력하신 개인 API 키는 전적으로 사용자의 웹 브라우저 내부 로컬 저장소(localStorage)에만 안전하게 보관되며 외부 서버나 타인에게 일체 전송 또는 노출되지 않습니다.
+                </p>
+              </div>
+
+              {/* Input Form */}
+              <div className="w-full md:w-80 bg-zinc-950/60 border border-zinc-850 p-4.5 rounded-2xl flex flex-col gap-3 shrink-0">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-zinc-300">Gemini 개인 API 키 입력</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                    apiKey ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-800 text-zinc-500'
+                  }`}>
+                    {apiKey ? '활성화 상태' : '데모 모드 실행중'}
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  <input
+                    type="password"
+                    placeholder="AIzaSy로 시작하는 API 키를 입력해 주세요."
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono"
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        if (!apiKeyInput.trim()) {
+                          alert('API 키를 입력해 주세요.');
+                          return;
+                        }
+                        const trimmed = apiKeyInput.trim();
+                        localStorage.setItem('custom_gemini_api_key', trimmed);
+                        setApiKey(trimmed);
+                        setApiKeyInput(trimmed);
+                        alert('성공: Gemini API 개인키가 안전하게 브라우저에 저장되었습니다. 이제 모든 AI 진단 기능에 고객님의 API 키가 즉시 우선 적용됩니다!');
+                        setShowApiKeySetting(false);
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2 rounded-xl transition-all cursor-pointer"
+                    >
+                      키 저장하기
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('custom_gemini_api_key');
+                        setApiKey('');
+                        setApiKeyInput('');
+                        alert('Gemini API 개인키가 삭제되었습니다. 기본 공용 서버 데모 모드로 자동 전환됩니다.');
+                      }}
+                      className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 font-bold text-xs py-2 rounded-xl transition-all cursor-pointer"
+                    >
+                      키 삭제 (데모로)
+                    </button>
+                  </div>
+                </div>
+
+                {apiKey && (
+                  <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-2 text-[10px] text-emerald-400 text-center font-mono">
+                    {apiKey.slice(0, 6)}••••••••••••{apiKey.slice(-4)}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Single-View Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">

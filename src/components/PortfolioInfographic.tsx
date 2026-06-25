@@ -231,11 +231,13 @@ ${watchlistStr}
 3. 한국어 문체로 기품있고 고차원적인 애널리스트 톤으로 작성하십시오 (최소 5문장 이상, 가감없이 솔직하고 명확하게).`;
 
       const passcode = localStorage.getItem('sa_ai_access_code') || '';
+      const userApiKey = localStorage.getItem('custom_gemini_api_key') || '';
       const aiRes = await fetch('/api/stocks/NVDA/analysis', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'x-ai-access-code': passcode,
+          'X-Gemini-Api-Key': userApiKey,
         },
         body: JSON.stringify({ customPrompt: prompt })
       });
