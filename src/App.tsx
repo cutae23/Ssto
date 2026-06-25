@@ -415,14 +415,9 @@ export default function App() {
           throw new Error(data.error);
         }
         
-        // Safeguard: If the response is identified as a portfolio but holdings are missing or empty,
-        // populate them with the rich 8-stock list to guarantee a flawless premium UX.
         if (data && data.isPortfolio) {
           if (!data.portfolioHoldings || data.portfolioHoldings.length === 0) {
-            data.portfolioHoldings = SAMPLE_PORTFOLIO_HOLDINGS;
-          }
-          if (!data.portfolioSummary) {
-            data.portfolioSummary = SAMPLE_PORTFOLIO_SUMMARY;
+            throw new Error('이미지 분석 결과, 보유 종목 정보를 올바르게 추출하지 못했습니다. MTS/HTS 잔고 화면이 선명하게 보이도록 다시 캡처해서 시도해 주세요.');
           }
         }
         
