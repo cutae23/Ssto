@@ -404,10 +404,16 @@ export default function App() {
         clearInterval(timer);
 
         if (!response.ok) {
-          throw new Error('서버 분석 도중 대기 시간 초과 오류가 발생했습니다. 견본 테스트를 권장합니다.');
+          const errData = await response.json().catch(() => null);
+          const errMsg = errData?.error || '서버 분석 도중 대기 시간 초과 오류가 발생했습니다. 견본 테스트를 권장합니다.';
+          throw new Error(errMsg);
         }
 
         const data = await response.json();
+        
+        if (data && data.error) {
+          throw new Error(data.error);
+        }
         
         // Safeguard: If the response is identified as a portfolio but holdings are missing or empty,
         // populate them with the rich 8-stock list to guarantee a flawless premium UX.
@@ -423,9 +429,8 @@ export default function App() {
         setAnalysisResult(data);
       }
     } catch (err: any) {
-      console.warn('Real AI server analysis failed, fallback with beautiful analysis data:', err);
-      // Fail-safe graceful fallback directly showing the accurate parsed data to protect UX
-      setAnalysisResult(SAMPLE_ANALYSIS_RESULT);
+      console.error('Real AI server analysis failed:', err);
+      setErrorMessage(err.message || '서버 분석 도중 오류가 발생했습니다.');
     } finally {
       setIsAnalyzing(false);
     }
