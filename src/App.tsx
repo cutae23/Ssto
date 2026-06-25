@@ -578,38 +578,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Sample testing button triggers exact portfolio values scanned */}
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                    💡 테스트용 계좌 잔고 이미지 제공
-                  </span>
-                  <span className="text-[9px] text-indigo-400 font-mono animate-pulse font-extrabold">무료 즉시 체험 가능</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleLoadSample}
-                  className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between group cursor-pointer ${
-                    isSampleLoaded 
-                      ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/25'
-                      : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-750 hover:bg-zinc-950'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-indigo-400 group-hover:text-indigo-300">
-                      <Coins className="h-4.5 w-4.5" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-extrabold text-zinc-250 block">MTS 계좌 잔고 견본 이미지</span>
-                      <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">대원전선, 씨에스윈드, 삼성전자 등 8종목</span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-indigo-400 font-black group-hover:translate-x-1 transition-transform">
-                    가동하기 &gt;
-                  </span>
-                </button>
-              </div>
-
               {/* Dropzone container */}
               <div
                 onDragOver={handleDragOver}
@@ -623,35 +591,15 @@ export default function App() {
               >
                 {selectedImage ? (
                   <div className="w-full flex flex-col items-center gap-4">
-                    {isSampleLoaded ? (
-                      /* MTS Mock UI preview representing exact holding list */
-                      <div className="w-full max-w-sm rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 font-mono text-left relative overflow-hidden shadow-xl">
-                        <div className="absolute right-2 top-2 text-[8px] bg-red-500/10 text-rose-400 border border-rose-500/20 px-1.5 py-0.5 rounded uppercase font-bold">MTS Screen Scanned</div>
-                        <h5 className="text-[11px] font-bold text-zinc-300 border-b border-zinc-850 pb-2 flex items-center gap-1">
-                          <Coins className="h-3.5 w-3.5 text-yellow-400" />
-                          잔고/보유내역 가상 스크린샷
-                        </h5>
-                        <div className="grid grid-cols-2 gap-y-1.5 gap-x-3 text-[10px] mt-2.5 pb-2.5 border-b border-zinc-850 text-zinc-400">
-                          <div>평가손익: <span className="text-rose-400 font-extrabold">-28,645,320원 (-32.15%)</span></div>
-                          <div>평가금액: <span className="text-zinc-200 font-bold">60,465,680원</span></div>
-                          <div>매입금액: <span className="text-zinc-400 font-bold">89,111,000원</span></div>
-                          <div>예수금자산: <span className="text-emerald-400 font-bold">21,826,915원</span></div>
-                        </div>
-                        <div className="text-[9px] text-zinc-500 mt-2">
-                          추출 종목: 대원전선, 씨에스윈드, 육일씨엔에쓰, GS글로벌, 한국첨단소재, AP위성, 이랜시스, 삼성전자...
-                        </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="p-3 bg-zinc-900 rounded-full border border-zinc-800 text-indigo-400">
+                        <FileImage className="h-8 w-8" />
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="p-3 bg-zinc-900 rounded-full border border-zinc-800 text-indigo-400">
-                          <FileImage className="h-8 w-8" />
-                        </div>
-                        <span className="text-xs font-black text-zinc-300 font-mono max-w-xs truncate">
-                          {selectedFileName || '내_계좌_잔고_스크린샷.png'}
-                        </span>
-                        <p className="text-[10px] text-zinc-500 font-mono">가로/세로 매크로 해독 준비 완료</p>
-                      </div>
-                    )}
+                      <span className="text-xs font-black text-zinc-300 font-mono max-w-xs truncate">
+                        {selectedFileName || '내_계좌_잔고_스크린샷.png'}
+                      </span>
+                      <p className="text-[10px] text-zinc-500 font-mono">가로/세로 매크로 해독 준비 완료</p>
+                    </div>
 
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-2.5 py-0.5">
                       <CheckCircle2 className="h-3 w-3 text-indigo-400" /> 이미지 탑재 완료
