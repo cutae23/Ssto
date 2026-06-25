@@ -1580,6 +1580,89 @@ ${targetPrice ? `- 사용자의 희망 목표가: ${targetPrice}` : ''}
   }
 });
 
+// 9. AI Chat assistant endpoint
+app.post('/api/chat', verifyAiAccess, async (req, res) => {
+  const { message, history = [], portfolio, profile } = req.body;
+
+  if (!message) {
+    res.status(400).json({ error: '질문 메시지를 입력해 주세요.' });
+    return;
+  }
+
+  try {
+    const ai = getGemini();
+
+    const formattedHistory = history.map((h: any) => ({
+      role: h.role === 'model' ? 'model' : 'user',
+      parts: [{ text: h.text }]
+    }));
+
+    // Construct full system instructions context about portfolio and user profile
+    let portfolioContext = '보유한 포트폴리오가 없습니다. 사용자는 일반적인 주식 정보나 투자 관련 질문을 하고 있습니다.';
+    if (portfolio) {
+      const summary = portfolio.portfolioSummary;
+      const holdings = portfolio.portfolioHoldings || [];
+      const holdingsStr = holdings.map((h: any) => 
+        `- 종목명: ${h.name} (${h.ticker}), 평단가: ${h.purchasePrice?.toLocaleString()}원, 현재가: ${h.currentPrice?.toLocaleString()}원, 보유수량: ${h.quantity?.toLocaleString()}주, 평가손익: ${h.profitLoss?.toLocaleString()}원 (수익률: ${h.returnPercent?.toFixed(2)}%), AI 주가 단계: ${h.marketPosition || '미정'}, AI 의견: ${h.actionOpinion || '미정'}`
+      ).join('\n');
+
+      portfolioContext = `
+[사용자 보유 포트폴리오 정보]
+- 총 매입 금액: ${summary?.totalPurchaseAmount?.toLocaleString()}원
+- 총 평가 금액: ${summary?.totalEvaluationAmount?.toLocaleString()}원
+- 총 평가 손익: ${summary?.totalProfitLoss?.toLocaleString()}원 (수익률: ${summary?.totalReturnPercent?.toFixed(2)}%)
+- 예수금: ${summary?.deposit?.toLocaleString()}원
+- 권장 현금 비중: ${summary?.recommendedCashPercent}%
+
+[보유 종목 리스트]
+${holdingsStr}
+`;
+    }
+
+    let profileContext = '';
+    if (profile) {
+      profileContext = `
+[사용자 투자 성향]
+- 위험 성향: ${profile.riskTolerance === 'conservative' ? '보수안정' : profile.riskTolerance === 'aggressive' ? '공격투자' : '균형적'}
+- 희망 투자 주기: ${profile.horizon === 'short' ? '단기 트레이딩' : profile.horizon === 'long' ? '장기 투자' : '중기 투자'}
+- 관심 분야: ${profile.interests || '미지정'}
+- 선호 시장: ${profile.region === 'krx' ? '국내 주식' : profile.region === 'us' ? '미국 주식' : '글로벌 분산'}
+`;
+    }
+
+    const systemInstruction = `당신은 대한민국 최고의 엘리트 주식 분석가이자 개인 자산 관리 파트너 "VISION MARKET AI"입니다.
+사용자가 자신의 포트폴리오 자산, 개별 종목, 혹은 거시경제 트렌드에 대해 질문하고 있습니다.
+사용자의 질문에 친절하고, 분석적이며, 전문적이면서도 알기 쉽게 설명해 주십시오.
+
+존댓말을 사용하고, 신뢰감을 주는 어조로 조언하십시오.
+사용자의 투자 성향과 보유 포트폴리오를 기반으로 맞춤형으로 설명하되, 필요 시 객관적인 시장 리스크도 짚어주십시오.
+
+${portfolioContext}
+${profileContext}
+
+답변은 마크다운 형식을 적극 활용하여 가독성 있게 작성해 주십시오. (예: 볼드체, 글머리 기호, 넘버링 등)`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: [
+        ...formattedHistory,
+        { role: 'user', parts: [{ text: message }] }
+      ],
+      config: {
+        systemInstruction: systemInstruction,
+      }
+    });
+
+    const reply = response.text || '죄송합니다. 답변을 생성하는 도중 오류가 발생했습니다.';
+    res.json({ reply });
+  } catch (err: any) {
+    console.error('Chat AI failed:', err);
+    res.json({
+      reply: '죄송합니다. AI 서비스 연결이 일시적으로 원활하지 않습니다. 질문하신 내용에 대한 정밀 답변을 도출할 수 없습니다. 잠시 후 다시 시도해 주십시오.'
+    });
+  }
+});
+
 // Live server and Vite integration configuration
 async function startServer() {
   if (process.env.VERCEL) {

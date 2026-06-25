@@ -22,9 +22,11 @@ import {
   HelpCircle as QuestionIcon,
   LayoutDashboard,
   Cpu,
-  Layers
+  Layers,
+  MessageSquare
 } from 'lucide-react';
 import { UserProfile, CaptureAnalysisResult, PortfolioHolding, PortfolioSummary } from './types';
+import AiChatPanel from './components/AiChatPanel';
 
 // Helper function to group holdings by industrial sectors
 export function groupHoldingsBySector(holdings: PortfolioHolding[]): Array<{
@@ -279,7 +281,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<CaptureAnalysisResult | null>(null);
   const [selectedHoldingForDetail, setSelectedHoldingForDetail] = useState<PortfolioHolding | null>(null);
-  const [activeResultTab, setActiveResultTab] = useState<'comprehensive' | 'individual' | 'sectorAnalysis'>('comprehensive');
+  const [activeResultTab, setActiveResultTab] = useState<'comprehensive' | 'individual' | 'sectorAnalysis' | 'aiChat'>('comprehensive');
 
   // Expandable investor profile configuration
   const [showProfile, setShowProfile] = useState(false);
@@ -762,23 +764,27 @@ export default function App() {
               )}
 
               {!isAnalyzing && !analysisResult && (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-zinc-900/40 border border-zinc-850 rounded-2xl p-12 flex flex-col items-center justify-center text-center gap-5"
-                  style={{ minHeight: '540px' }}
-                >
-                  <div className="h-14 w-14 bg-zinc-900/80 border border-zinc-850 rounded-2xl flex items-center justify-center text-zinc-500">
-                    <Zap className="h-6 w-6" />
-                  </div>
-                  <div className="flex flex-col gap-1.5 max-w-md">
-                    <h4 className="text-sm font-extrabold text-zinc-200">AI 정밀 평가 대기 중</h4>
-                    <p className="text-xs text-zinc-400 leading-relaxed">
-                      왼쪽의 스크린샷 1단계에 계좌 잔고를 업로드하거나 <strong className="text-indigo-400 font-bold">MTS 계좌 잔고 견본 이미지</strong>를 클릭하여 신속 체험을 가동해보세요. AI 분석을 실행하면 이곳에 상세한 종합 처방전이 로드됩니다.
-                    </p>
-                  </div>
-                </motion.div>
+                <div className="flex flex-col gap-6 w-full text-left">
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-zinc-900/40 border border-zinc-850 rounded-3xl p-8 flex flex-col items-center justify-center text-center gap-4"
+                    style={{ minHeight: '180px' }}
+                  >
+                    <div className="h-10 w-10 bg-zinc-900/80 border border-zinc-850 rounded-xl flex items-center justify-center text-indigo-400">
+                      <Zap className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col gap-1 max-w-md">
+                      <h4 className="text-xs font-black text-zinc-200">AI 정밀 평가 대기 중</h4>
+                      <p className="text-[11px] text-zinc-400 leading-relaxed">
+                        왼쪽 1단계에 계좌 스크린샷 이미지를 올리거나 <strong className="text-indigo-400 font-bold">MTS 계좌 잔고 견본 이미지</strong>를 가동하시면 여기에 종합 보고서가 생성됩니다. 대기하는 동안 아래에서 AI 수석 애널리스트에게 시장 전망이나 종목 정보를 질문하실 수 있습니다.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                  <AiChatPanel portfolio={null} profile={profile} />
+                </div>
               )}
 
               {!isAnalyzing && analysisResult && (
@@ -806,10 +812,10 @@ export default function App() {
                   </div>
 
                   {/* Premium Tab Swapper */}
-                  <div className="flex flex-col sm:flex-row bg-zinc-950 border border-zinc-850 rounded-2xl p-1 w-full gap-1 shadow-inner">
+                  <div className="flex flex-col md:flex-row bg-zinc-950 border border-zinc-850 rounded-2xl p-1 w-full gap-1 shadow-inner">
                     <button
                       onClick={() => setActiveResultTab('comprehensive')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-200 ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
                         activeResultTab === 'comprehensive'
                           ? 'bg-zinc-900 text-white border border-zinc-850 shadow-md text-indigo-300'
                           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
@@ -820,25 +826,36 @@ export default function App() {
                     </button>
                     <button
                       onClick={() => setActiveResultTab('individual')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-200 ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
                         activeResultTab === 'individual'
                           ? 'bg-zinc-900 text-white border border-zinc-850 shadow-md text-purple-300'
                           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
                       }`}
                     >
                       <Sparkles className={`h-4 w-4 transition-colors ${activeResultTab === 'individual' ? 'text-purple-400' : 'text-zinc-500'}`} />
-                      보유 종목 하나하나 정밀분석 ({analysisResult.portfolioHoldings?.length || 0}개)
+                      보유 종목 정밀분석 ({analysisResult.portfolioHoldings?.length || 0}개)
                     </button>
                     <button
                       onClick={() => setActiveResultTab('sectorAnalysis')}
-                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-200 ${
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
                         activeResultTab === 'sectorAnalysis'
                           ? 'bg-zinc-900 text-white border border-zinc-850 shadow-md text-emerald-300'
                           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
                       }`}
                     >
                       <TrendingUp className={`h-4 w-4 transition-colors ${activeResultTab === 'sectorAnalysis' ? 'text-emerald-400' : 'text-zinc-500'}`} />
-                      분야별 그룹핑 & AI 트렌드 전망
+                      분야별 그룹핑 & 트렌드
+                    </button>
+                    <button
+                      onClick={() => setActiveResultTab('aiChat')}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                        activeResultTab === 'aiChat'
+                          ? 'bg-zinc-900 text-white border border-zinc-850 shadow-md text-amber-300'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+                      }`}
+                    >
+                      <MessageSquare className={`h-4 w-4 transition-colors ${activeResultTab === 'aiChat' ? 'text-amber-400' : 'text-zinc-500'}`} />
+                      AI 실시간 Q&A
                     </button>
                   </div>
 
@@ -1584,6 +1601,12 @@ export default function App() {
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeResultTab === 'aiChat' && (
+                <div className="animate-fadeIn text-left">
+                  <AiChatPanel portfolio={analysisResult} profile={profile} />
                 </div>
               )}
                 </motion.div>
