@@ -542,6 +542,47 @@ function getGemini(customKey?: string): GoogleGenAI {
   });
 }
 
+// Fallback chain helper to guarantee generation works on all Gemini API keys (tries 2.5-flash first, then 1.5-flash, then 3.5-flash)
+async function generateContentWithFallback(ai: GoogleGenAI, options: {
+  contents: any;
+  config?: any;
+}) {
+  const modelsToTry = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-3.5-flash'];
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
+    try {
+      console.log(`[Gemini] Attempting content generation with model: ${model}`);
+      const response = await ai.models.generateContent({
+        model,
+        contents: options.contents,
+        config: options.config,
+      });
+      console.log(`[Gemini] Succeeded with model: ${model}`);
+      return response;
+    } catch (err: any) {
+      console.warn(`[Gemini] Model ${model} failed:`, err.message || err);
+      lastError = err;
+      
+      // Stop immediately if it is a structural API key authorization or signature error
+      const errText = (err.message || '').toLowerCase();
+      const isKeyError = errText.includes('api_key') || 
+        errText.includes('apikey') || 
+        errText.includes('key not valid') || 
+        errText.includes('invalid') || 
+        errText.includes('forbidden') || 
+        errText.includes('permission') || 
+        errText.includes('unauthorized');
+        
+      if (isKeyError) {
+        throw err;
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // Authentication middleware to restrict Gemini API usage on the shared link
 function verifyAiAccess(req: express.Request, res: express.Response, next: express.NextFunction) {
   const code = process.env.AI_ACCESS_CODE;
@@ -599,8 +640,7 @@ app.post('/api/test-gemini', async (req, res) => {
       }
     });
 
-    const response = await testClient.models.generateContent({
-      model: 'gemini-3.5-flash',
+    const response = await generateContentWithFallback(testClient, {
       contents: 'Say hello in Korean. Briefly in 3 words.',
     });
 
@@ -1044,8 +1084,7 @@ app.post('/api/stocks/:symbol/discussions', (req, res) => {
         const key = process.env.GEMINI_API_KEY;
         if (key) {
           const client = getGemini();
-          const aiResponse = await client.models.generateContent({
-            model: 'gemini-3.5-flash',
+          const aiResponse = await generateContentWithFallback(client, {
             contents: `Financial Chat Bot. Reply briefly (1-2 short sentences in Korean) to this investor remark on stock ${stock?.name || symbol}. 
             Remark: "${targetMessage}". Current pricing status: ${isUp ? '상승세' : '하락세'}, Knee-Shoulder status: ${stock?.kneeShoulderStatus || 'WAIST'}.
             Keep it realistic, analytical, and slightly friendly. Avoid using markdown format.`,
@@ -1114,8 +1153,7 @@ app.post('/api/stocks/:symbol/analysis', verifyAiAccess, async (req, res) => {
   "analyzedAt": "2026-06-12"
 }`;
 
-    const response = await client.models.generateContent({
-      model: 'gemini-3.5-flash',
+    const response = await generateContentWithFallback(client, {
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -1202,8 +1240,7 @@ app.post('/api/themes/ai-generate', verifyAiAccess, async (req, res) => {
 의견 수집 및 요약 시 반드시 전문가의 가감없는 회의적 관점과 낙관적 관점을 정밀하게 합성하고, 심도 깊은 수치 데이터(긍정률, 거품지수 등)를 반영하십시오.
 JSON 형식으로 완전한 배열 구조로만 응답해 주십시오. 마크다운 장식(\`\`\`json ...)은 빼고 완전한 원시 JSON 텍스트만 출력해야 합니다.`;
 
-    const response = await client.models.generateContent({
-      model: 'gemini-3.5-flash',
+    const response = await generateContentWithFallback(client, {
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -1459,8 +1496,7 @@ ${targetPrice ? `- 사용자의 희망 목표가: ${targetPrice}` : ''}
 }`
     };
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+    const response = await generateContentWithFallback(ai, {
       contents: { parts: [imagePart, textPart] },
       config: {
         responseMimeType: 'application/json',
@@ -1475,20 +1511,43 @@ ${targetPrice ? `- 사용자의 희망 목표가: ${targetPrice}` : ''}
   } catch (err: any) {
     console.error('Gemini screenshot analysis failed:', err);
     
+    const customApiKeyHeader = req.headers['x-gemini-api-key'] || req.headers['X-Gemini-Api-Key'];
+    const hasCustomKey = customApiKeyHeader && typeof customApiKeyHeader === 'string' && customApiKeyHeader.trim() !== '';
+
+    const origMsg = err.message || '알 수 없는 오류';
+
     // If it is a missing/invalid key error, send a clear error response instead of faking the analysis
-    if (err.message && (err.message.includes('API_KEY') || err.message.includes('apiKey') || err.message.includes('key') || err.message.includes('required'))) {
+    if (err.message && (err.message.includes('API_KEY') || err.message.includes('apiKey') || err.message.includes('key') || err.message.includes('required') || err.message.includes('invalid') || err.message.includes('INVALID_ARGUMENT') || err.message.includes('not valid'))) {
       res.status(400).json({
-        error: 'GEMINI_API_KEY가 설정되지 않았거나 올바르지 않습니다. AI Studio 우측 상단의 Settings > Secrets 메뉴에서 GEMINI_API_KEY를 설정해 주시면, 고객님이 실제로 캡처해서 올리신 이미지를 분석해 드립니다.'
+        error: `GEMINI_API_KEY가 설정되지 않았거나 올바르지 않습니다. 화면 상단의 [Gemini API 개인키 설정] 노란색 버튼을 클릭해 정상적인 개인 API 키를 등록해 주세요. (상세 에러: ${origMsg})`
       });
       return;
     }
     
-    let errMsg = err.message || '알 수 없는 서버 오류가 발생했습니다.';
+    let errMsg = origMsg;
     const status = err.status || 500;
     
-    // Check for 503 / high demand / unavailable
-    if (status === 503 || (err.message && (err.message.includes('503') || err.message.includes('demand') || err.message.includes('UNAVAILABLE') || err.message.includes('temporary')))) {
-      errMsg = '구글 Gemini AI 모델이 현재 일시적으로 트래픽 폭주(High Demand) 상태입니다. 잠시 후 다시 이미지를 업로드하고 분석을 시도해 주세요.';
+    // Check for 503 / 429 / high demand / unavailable / quota
+    const isRateLimitedOrCongested = status === 503 || status === 429 || 
+      (err.message && (
+        err.message.includes('503') || 
+        err.message.includes('429') || 
+        err.message.includes('demand') || 
+        err.message.includes('UNAVAILABLE') || 
+        err.message.includes('temporary') || 
+        err.message.includes('quota') || 
+        err.message.includes('limit') || 
+        err.message.includes('exhausted')
+      ));
+
+    if (isRateLimitedOrCongested) {
+      if (!hasCustomKey) {
+        errMsg = `구글 공용 데모 API 키가 현재 일시적으로 트래픽 초과 및 무료 한도 도달 상태입니다. 화면 상단의 [Gemini API 개인키 설정] 노란색 버튼을 클릭하여 본인의 무료 개인 API 키를 복사·등록하시면 대기 시간이나 오류 없이 1초 만에 즉시 고속 진단 분석을 완료하실 수 있습니다! (상세: ${origMsg})`;
+      } else {
+        errMsg = `입력하신 개인 Gemini API 키의 무료 한도가 초과되었거나 구글 서버가 일시적 트래픽 과부하 상태입니다. 잠시 후 다시 시도해 주세요. (상세: ${origMsg})`;
+      }
+    } else {
+      errMsg = `구글 AI 서버 연동 오류가 발생했습니다. (상세 에러: ${origMsg})`;
     }
     
     // Always use 400 (Bad Request) instead of 503/500 to prevent Cloud Run/ingress load balancers from intercepting and returning standard HTML outage pages
@@ -1561,8 +1620,7 @@ ${profileContext}
 
 답변은 마크다운 형식을 적극 활용하여 가독성 있게 작성해 주십시오. (예: 볼드체, 글머리 기호, 넘버링 등)`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+    const response = await generateContentWithFallback(ai, {
       contents: [
         ...formattedHistory,
         { role: 'user', parts: [{ text: message }] }
@@ -1576,8 +1634,38 @@ ${profileContext}
     res.json({ reply });
   } catch (err: any) {
     console.error('Chat AI failed:', err);
+    
+    const customApiKeyHeader = req.headers['x-gemini-api-key'] || req.headers['X-Gemini-Api-Key'];
+    const hasCustomKey = customApiKeyHeader && typeof customApiKeyHeader === 'string' && customApiKeyHeader.trim() !== '';
+    const status = err.status || 500;
+    const origMsg = err.message || '알 수 없는 오류';
+    
+    let errMsg = `AI 서비스 연결이 일시적으로 원활하지 않습니다. (상세 에러: ${origMsg})`;
+    
+    const isRateLimitedOrCongested = status === 503 || status === 429 || 
+      (err.message && (
+        err.message.includes('503') || 
+        err.message.includes('429') || 
+        err.message.includes('demand') || 
+        err.message.includes('UNAVAILABLE') || 
+        err.message.includes('temporary') || 
+        err.message.includes('quota') || 
+        err.message.includes('limit') || 
+        err.message.includes('exhausted')
+      ));
+
+    if (isRateLimitedOrCongested) {
+      if (!hasCustomKey) {
+        errMsg = `구글 공용 데모 API 키가 트래픽 초과 상태입니다. 화면 상단의 [Gemini API 개인키 설정] 노란색 버튼을 클릭하여 본인의 무료 개인 API 키를 등록하시면 오류나 한도 제약 없이 실시간 대화 서비스를 즉시 무제한 이용하실 수 있습니다! (상세: ${origMsg})`;
+      } else {
+        errMsg = `입력하신 개인 Gemini API 키의 무료 한도가 초과되었거나 구글 서버가 일시적 트래픽 과부하 상태입니다. 잠시 후 다시 시도해 주세요. (상세: ${origMsg})`;
+      }
+    } else if (err.message && (err.message.includes('API_KEY') || err.message.includes('apiKey') || err.message.includes('key') || err.message.includes('required') || err.message.includes('invalid') || err.message.includes('INVALID_ARGUMENT') || err.message.includes('not valid'))) {
+      errMsg = `설정된 Gemini API 키가 올바르지 않습니다. 화면 상단의 [Gemini API 개인키 설정] 버튼을 클릭해 정상적인 개인 API 키를 등록해 주세요. (상세: ${origMsg})`;
+    }
+
     res.json({
-      reply: '죄송합니다. AI 서비스 연결이 일시적으로 원활하지 않습니다. 질문하신 내용에 대한 정밀 답변을 도출할 수 없습니다. 잠시 후 다시 시도해 주십시오.'
+      reply: `죄송합니다. ${errMsg} (상태 코드: ${status})`
     });
   }
 });
