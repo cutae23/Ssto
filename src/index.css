@@ -33,3 +33,30 @@
 .subtle-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(113, 113, 122, 0.65);
 }
+
+/* Custom Print Optimizations for Professional Vector PDF Exports */
+@media print {
+  html, body {
+    background-color: #ffffff !important;
+    color: #09090b !important;
+    font-size: 11px !important;
+  }
+  
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  .print-force-bg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Remove scrollbars and set margins for printing */
+  @page {
+    size: A4;
+    margin: 15mm 12mm 15mm 12mm;
+  }
+}
+

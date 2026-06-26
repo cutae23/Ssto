@@ -24,10 +24,13 @@ import {
   Cpu,
   Layers,
   MessageSquare,
-  Key
+  Key,
+  Printer
 } from 'lucide-react';
 import { UserProfile, CaptureAnalysisResult, PortfolioHolding, PortfolioSummary } from './types';
 import AiChatPanel from './components/AiChatPanel';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 // Helper function to group holdings by industrial sectors
 export function groupHoldingsBySector(holdings: PortfolioHolding[]): Array<{
@@ -283,6 +286,58 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState<CaptureAnalysisResult | null>(null);
   const [selectedHoldingForDetail, setSelectedHoldingForDetail] = useState<PortfolioHolding | null>(null);
   const [activeResultTab, setActiveResultTab] = useState<'comprehensive' | 'individual' | 'sectorAnalysis' | 'aiChat'>('comprehensive');
+  const [isSavingPdf, setIsSavingPdf] = useState<boolean>(false);
+
+  const handleSavePdf = async () => {
+    if (!analysisResult) return;
+    setIsSavingPdf(true);
+    try {
+      const element = document.getElementById('pdf-report-template');
+      if (!element) {
+        throw new Error('PDF report element not found');
+      }
+
+      // html2canvas config for high-quality, sharp text render
+      const canvas = await html2canvas(element, {
+        scale: 2, // Double scaling for crisp typography on export
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        allowTaint: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgWidth = 210; // A4 standard width in mm
+      const pageHeight = 297; // A4 standard height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Draw the first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pageHeight;
+
+      // Render subsequent pages if content overflows A4 height
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pageHeight;
+      }
+
+      const tickerName = analysisResult.targetTicker || 'Asset';
+      const safeTickerName = tickerName.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+      pdf.save(`VisionMarketAI_Report_${safeTickerName}.pdf`);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('PDF 파일 생성에 실패했습니다. 이 브라우저가 PDF 다운로드를 지원하는지 확인해 주세요.');
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
 
   // Custom Gemini API Key configuration
   const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('custom_gemini_api_key') || '');
@@ -441,7 +496,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans flex flex-col antialiased selection:bg-indigo-500/30">
       {/* 1. Header */}
-      <header className="border-b border-zinc-900 bg-zinc-950/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <header className="print:hidden border-b border-zinc-900 bg-zinc-950/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 bg-gradient-to-tr from-indigo-600 to-rose-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/10">
             <Sparkles className="h-5 w-5 text-white animate-pulse" />
@@ -581,7 +636,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Single-View Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+      <main className="print:hidden flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">
         
         {/* Step-by-Step Info Guide */}
         <div className="bg-gradient-to-r from-indigo-950/20 to-zinc-900/10 border border-zinc-850 p-4.5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -878,9 +933,20 @@ export default function App() {
                         <h4 className="text-sm font-extrabold text-white mt-0.5">{analysisResult.targetTicker}</h4>
                       </div>
                     </div>
-                    <span className="text-xs font-mono font-extrabold px-3 py-1.5 rounded-xl border border-emerald-500/25 text-emerald-400 bg-emerald-500/10 shrink-0 text-center relative z-10">
-                      🟢 종합 대응 권장: {analysisResult.actionPlan}
-                    </span>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 relative z-10 shrink-0">
+                      <span className="text-xs font-mono font-extrabold px-3 py-1.5 rounded-xl border border-emerald-500/25 text-emerald-400 bg-emerald-500/10 text-center shrink-0">
+                        🟢 종합 대응 권장: {analysisResult.actionPlan}
+                      </span>
+                      <button
+                        onClick={handleSavePdf}
+                        disabled={isSavingPdf}
+                        className="flex items-center justify-center gap-1.5 text-xs font-black px-3.5 py-1.5 rounded-xl border border-amber-500/20 bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-zinc-950 transition-all cursor-pointer shadow-md hover:shadow-amber-500/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="전체 진단 결과를 보기 좋게 정리된 PDF 파일로 인쇄하거나 저장합니다."
+                      >
+                        <Printer className={`h-3.5 w-3.5 ${isSavingPdf ? 'animate-spin' : ''}`} />
+                        <span>{isSavingPdf ? 'PDF 생성 중...' : 'PDF 리포트 저장'}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Premium Tab Swapper */}
@@ -1898,9 +1964,191 @@ export default function App() {
       </main>
       
       {/* 4. Footer */}
-      <footer className="border-t border-zinc-900 bg-zinc-950/40 py-5 text-center text-[10px] text-zinc-650 font-mono">
+      <footer className="print:hidden border-t border-zinc-900 bg-zinc-950/40 py-5 text-center text-[10px] text-zinc-650 font-mono">
         &copy; {new Date().getFullYear()} VISION MARKET AI &middot; Elite Multimodal Stock & Portfolio OCR Diagnosis. All rights Reserved.
       </footer>
+
+      {/* 5. Print-Only Beautiful PDF Report Template */}
+      {analysisResult && (
+        <div 
+          id="pdf-report-template"
+          className="print:block print:static print:left-0 print:top-0 print:w-full print:border-none print:p-0 absolute left-[-9999px] top-[-9999px] w-[820px] bg-white text-zinc-900 p-8 font-sans border border-zinc-200"
+        >
+          {/* Cover Header */}
+          <div className="border-b-2 border-zinc-900 pb-4 mb-6 flex justify-between items-end">
+            <div>
+              <span className="text-[10px] text-zinc-500 font-mono font-bold uppercase tracking-wider block">VISION MARKET AI - PORTFOLIO DIAGNOSTIC REPORT</span>
+              <h1 className="text-2xl font-black tracking-tight mt-1 text-zinc-950">AI 자산 포트폴리오 정밀 처방 진단 보고서</h1>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-zinc-600 font-semibold block">진단 발급일: {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">Report ID: VM-{Math.floor(100000 + Math.random() * 900000)}</span>
+            </div>
+          </div>
+
+          {/* Quick Metrics Banner */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-zinc-50 border border-zinc-200 p-4 rounded-xl mb-6">
+            <div>
+              <span className="text-[9px] text-zinc-500 font-bold uppercase block">진단 대상</span>
+              <span className="text-sm font-black text-zinc-900 mt-1 block">{analysisResult.targetTicker}</span>
+            </div>
+            <div>
+              <span className="text-[9px] text-zinc-500 font-bold uppercase block">종합 대응 기조</span>
+              <span className="text-sm font-black text-indigo-600 mt-1 block">🟢 {analysisResult.actionPlan}</span>
+            </div>
+            <div>
+              <span className="text-[9px] text-zinc-500 font-bold uppercase block">주가 수명 주기 판정</span>
+              <span className="text-sm font-black text-purple-600 mt-1 block">📊 {analysisResult.marketPosition} 단계</span>
+            </div>
+            <div>
+              <span className="text-[9px] text-zinc-500 font-bold uppercase block">투자 성향 적합도</span>
+              <span className="text-sm font-black text-amber-600 mt-1 block">⭐️ {analysisResult.suitabilityScore} / 100점</span>
+            </div>
+          </div>
+
+          {/* Main Layout: 2 Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Column Left */}
+            <div className="flex flex-col gap-6">
+              {/* Core Diagnosis description */}
+              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
+                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2 flex items-center gap-1.5">
+                  🔍 주가 위치 판정 및 세부 해독
+                </h3>
+                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                  {analysisResult.marketPositionDescription}
+                </p>
+              </div>
+
+              {/* Core Tactical Action detail */}
+              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
+                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2 flex items-center gap-1.5">
+                  ⚡ 자금 투입 및 비중 제어 전술
+                </h3>
+                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                  {analysisResult.actionPlanDetail}
+                </p>
+              </div>
+            </div>
+
+            {/* Column Right */}
+            <div className="flex flex-col gap-6">
+              {/* Macro & Technical background */}
+              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
+                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2">
+                  🌐 글로벌 거시 경제 및 기술적 배경
+                </h3>
+                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap mb-3">
+                  {analysisResult.macroBackground}
+                </p>
+                {analysisResult.technicalBackground && (
+                  <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                    {analysisResult.technicalBackground}
+                  </p>
+                )}
+              </div>
+
+              {/* Suitability comment */}
+              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
+                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2">
+                  👤 투자 성향 부합성 피드백
+                </h3>
+                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                  {analysisResult.suitabilityComment}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Risk Warning Signals */}
+          <div className="border border-zinc-200 p-4 rounded-xl mb-6 print-avoid-break">
+            <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2.5">
+              ⚠️ 향후 경계해야 할 3대 위험 신호 및 청산 트리거
+            </h3>
+            <ul className="list-disc pl-5 text-xs text-zinc-700 leading-relaxed space-y-1">
+              {analysisResult.warningSignals.map((signal, idx) => (
+                <li key={idx} className="font-medium">{signal}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Portfolio Details - Only printed if isPortfolio and has holdings */}
+          {analysisResult.isPortfolio && analysisResult.portfolioSummary && (
+            <div className="print-avoid-break mb-6">
+              <h2 className="text-sm font-black text-zinc-950 border-b-2 border-zinc-900 pb-1.5 mb-3">
+                📊 판독 자산 현황 요약 (Portfolio Status)
+              </h2>
+              
+              <div className="grid grid-cols-4 gap-4 bg-zinc-50 p-3.5 border border-zinc-200 rounded-xl mb-4 text-xs font-medium">
+                <div>
+                  <span className="text-[9px] text-zinc-500 block">총평가금액 (주식)</span>
+                  <span className="text-sm font-bold text-zinc-900">{(analysisResult.portfolioSummary.totalEvaluationAmount || 0).toLocaleString()}원</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-zinc-500 block">예수금 (현금)</span>
+                  <span className="text-sm font-bold text-zinc-900">{(analysisResult.portfolioSummary.deposit || 0).toLocaleString()}원</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-zinc-500 block">총자산액</span>
+                  <span className="text-sm font-bold text-zinc-900">{((analysisResult.portfolioSummary.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary.deposit || 0)).toLocaleString()}원</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-zinc-500 block">총 평가 손익 (수익률)</span>
+                  <span className={`text-sm font-bold ${(analysisResult.portfolioSummary.totalProfitLoss || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {(analysisResult.portfolioSummary.totalProfitLoss || 0).toLocaleString()}원 ({analysisResult.portfolioSummary.totalReturnPercent?.toFixed(2)}%)
+                  </span>
+                </div>
+              </div>
+
+              {analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-zinc-800 mb-2">개별 보유 종목 현황 및 행동 처방</h3>
+                  <table className="w-full text-left border-collapse border border-zinc-200 text-xs">
+                    <thead>
+                      <tr className="bg-zinc-100 border-b border-zinc-350 text-[9px] text-zinc-600 font-mono uppercase">
+                        <th className="p-2 border border-zinc-200">종목명 (코드)</th>
+                        <th className="p-2 border border-zinc-200 text-right">매입단가 / 현재가</th>
+                        <th className="p-2 border border-zinc-200 text-right">보유수량 / 평가액</th>
+                        <th className="p-2 border border-zinc-200 text-right">평가손익 / 수익률</th>
+                        <th className="p-2 border border-zinc-200 text-center">위치 판정</th>
+                        <th className="p-2 border border-zinc-200 text-center">AI 전술 처방</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analysisResult.portfolioHoldings.map((holding, idx) => (
+                        <tr key={idx} className="border-b border-zinc-200 text-zinc-800">
+                          <td className="p-2 border border-zinc-200 font-semibold">{holding.name} {holding.ticker ? `(${holding.ticker})` : ''}</td>
+                          <td className="p-2 border border-zinc-200 text-right">
+                            {holding.purchasePrice?.toLocaleString()}원 / {holding.currentPrice?.toLocaleString()}원
+                          </td>
+                          <td className="p-2 border border-zinc-200 text-right">
+                            {holding.quantity?.toLocaleString()}주 / {holding.evaluationAmount?.toLocaleString()}원
+                          </td>
+                          <td className="p-2 border border-zinc-200 text-right font-medium">
+                            <span className={(holding.profitLoss || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                              {holding.profitLoss?.toLocaleString()}원 ({holding.returnPercent?.toFixed(2)}%)
+                            </span>
+                          </td>
+                          <td className="p-2 border border-zinc-200 text-center font-bold text-purple-700">{holding.marketPosition || '무릎'}</td>
+                          <td className="p-2 border border-zinc-200 text-center font-bold text-indigo-600">{holding.actionOpinion || '추가매수'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Legal and Disclaimer Disclaimer Footer */}
+          <div className="border-t border-zinc-300 pt-4 mt-8 text-[9px] text-zinc-500 leading-normal text-center">
+            본 진단 리포트는 사용자가 입력한 계좌 이미지 데이터와 투자 성향 파라미터를 기초로 Vision Market AI 분석 모델에 의해 독립적으로 산출되었습니다.<br />
+            제시된 의견과 진단 점수는 통계적 모형 및 과거 시장 데이터를 추종한 인공지능 요약 정보이며, 미래의 투자 이익을 보장하거나 투자를 권유하는 보증이 아닙니다.<br />
+            최종적인 투자 결정 및 자산 배분 책임은 전적으로 투자자 본인에게 귀속됩니다.<br />
+            <span className="font-bold font-mono uppercase block mt-1">Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

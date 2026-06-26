@@ -149,11 +149,13 @@ export default function AiChatPanel({ portfolio, profile }: AiChatPanelProps) {
       const historyPayload = updatedMessages.slice(0, -1);
 
       const userApiKey = localStorage.getItem('custom_gemini_api_key') || '';
+      const passcode = localStorage.getItem('sa_ai_access_code') || '';
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Gemini-Api-Key': userApiKey,
+          'x-ai-access-code': passcode,
         },
         body: JSON.stringify({
           message: query,
@@ -164,7 +166,23 @@ export default function AiChatPanel({ portfolio, profile }: AiChatPanelProps) {
       });
 
       if (!response.ok) {
-        throw new Error('서버와 대화 처리 도중 오류가 발생했습니다.');
+        let errorMsg = '서버와 대화 처리 도중 오류가 발생했습니다.';
+        try {
+          const rawText = await response.text();
+          try {
+            const errData = JSON.parse(rawText);
+            if (errData.message || errData.error) {
+              errorMsg = errData.message || errData.error;
+            } else {
+              errorMsg = `서버 오류 (상태 코드: ${response.status}): ${rawText.substring(0, 100)}`;
+            }
+          } catch (_) {
+            errorMsg = `서버 응답 오류 (상태 코드: ${response.status}): ${rawText.substring(0, 150)}`;
+          }
+        } catch (readErr: any) {
+          errorMsg = `네트워크 응답 읽기 실패: ${readErr?.message || readErr}`;
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
