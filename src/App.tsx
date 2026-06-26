@@ -299,16 +299,26 @@ export default function App() {
         throw new Error('PDF report element not found');
       }
 
+      // Check if mobile device to optimize canvas scale and prevent memory limits
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+      const scale = isMobile ? 1.2 : 1.8;
+
       // html2canvas config for high-quality, sharp text render
       const canvas = await html2canvas(element, {
-        scale: 2, // Double scaling for crisp typography on export
+        scale: scale,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
         allowTaint: true,
+        width: 820,         // Force exact width of the template to be captured
+        windowWidth: 820,   // Force layout calculation at exactly 820px width
       });
 
       const imgData = canvas.toDataURL('image/png');
+      if (!imgData || imgData === 'data:,') {
+        throw new Error('Failed to generate canvas image data (possibly due to memory limits)');
+      }
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const imgWidth = 210; // A4 standard width in mm
@@ -335,7 +345,7 @@ export default function App() {
       pdf.save(`VisionMarketAI_Report_${safeTickerName}.pdf`);
     } catch (err) {
       console.error('PDF export failed:', err);
-      alert('PDF 파일 생성에 실패했습니다. 이 브라우저가 PDF 다운로드를 지원하는지 확인해 주세요.');
+      alert('PDF 파일 생성 중 오류가 발생했습니다. 모바일 브라우저의 메모리 제한 때문일 수 있습니다. 화면의 리포트 미리보기 기능을 이용하시거나, 가로 화면(데스크톱 모드)으로 변경 후 다시 시도해 주세요.');
     } finally {
       setIsSavingPdf(false);
     }
@@ -1982,7 +1992,7 @@ export default function App() {
       {analysisResult && (
         <div 
           id="pdf-report-template"
-          className="print:block print:static print:left-0 print:top-0 print:w-full print:border-none print:p-0 absolute left-[-9999px] top-[-9999px] w-[820px] bg-white text-zinc-900 p-8 font-sans border border-zinc-200"
+          className="pdf-capture-container text-zinc-900 p-8 font-sans border border-zinc-200"
         >
           {/* Cover Header */}
           <div className="border-b-2 border-zinc-900 pb-4 mb-6 flex justify-between items-end">
