@@ -1992,180 +1992,320 @@ export default function App() {
       {analysisResult && (
         <div 
           id="pdf-report-template"
-          className="pdf-capture-container text-zinc-900 p-8 font-sans border border-zinc-200"
+          className="pdf-capture-container text-zinc-900 p-8 font-sans border-2 border-zinc-950"
         >
           {/* Cover Header */}
-          <div className="border-b-2 border-zinc-900 pb-4 mb-6 flex justify-between items-end">
+          <div className="border-b-4 border-zinc-950 pb-4 mb-6 flex justify-between items-end">
             <div>
-              <span className="text-[10px] text-zinc-500 font-mono font-bold uppercase tracking-wider block">VISION MARKET AI - PORTFOLIO DIAGNOSTIC REPORT</span>
-              <h1 className="text-2xl font-black tracking-tight mt-1 text-zinc-950">AI 자산 포트폴리오 정밀 처방 진단 보고서</h1>
+              <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; QUANT PORTFOLIO REPORT</span>
+              <h1 className="text-2xl font-black tracking-tight mt-1.5 text-zinc-950">AI 자산 포트폴리오 정밀 처방 진단 보고서</h1>
             </div>
             <div className="text-right">
-              <span className="text-xs text-zinc-600 font-semibold block">진단 발급일: {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">Report ID: VM-{Math.floor(100000 + Math.random() * 900000)}</span>
+              <span className="text-xs text-zinc-950 font-black block">진단 발급일: {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span className="text-[10px] text-zinc-600 font-mono font-bold block mt-0.5 uppercase">Report ID: VM-{Math.floor(100000 + Math.random() * 900000)}</span>
             </div>
           </div>
 
-          {/* Quick Metrics Banner */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-zinc-50 border border-zinc-200 p-4 rounded-xl mb-6">
-            <div>
-              <span className="text-[9px] text-zinc-500 font-bold uppercase block">진단 대상</span>
-              <span className="text-sm font-black text-zinc-900 mt-1 block">{analysisResult.targetTicker}</span>
+          {/* Quick Metrics Dashboard Bento */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="border-2 border-zinc-950 p-3 bg-zinc-50 rounded-xl">
+              <span className="text-[9px] text-zinc-600 font-black uppercase tracking-wider block">진단 대상</span>
+              <span className="text-sm font-black text-zinc-950 mt-1 block truncate">{analysisResult.targetTicker}</span>
             </div>
-            <div>
-              <span className="text-[9px] text-zinc-500 font-bold uppercase block">종합 대응 기조</span>
+            <div className="border-2 border-zinc-950 p-3 bg-indigo-50/30 rounded-xl">
+              <span className="text-[9px] text-indigo-700 font-black uppercase tracking-wider block">종합 대응 기조</span>
               <span className="text-sm font-black text-indigo-600 mt-1 block">🟢 {analysisResult.actionPlan}</span>
             </div>
-            <div>
-              <span className="text-[9px] text-zinc-500 font-bold uppercase block">주가 수명 주기 판정</span>
+            <div className="border-2 border-zinc-950 p-3 bg-purple-50/30 rounded-xl">
+              <span className="text-[9px] text-purple-700 font-black uppercase tracking-wider block">주가 수명 주기</span>
               <span className="text-sm font-black text-purple-600 mt-1 block">📊 {analysisResult.marketPosition} 단계</span>
             </div>
-            <div>
-              <span className="text-[9px] text-zinc-500 font-bold uppercase block">투자 성향 적합도</span>
-              <span className="text-sm font-black text-amber-600 mt-1 block">⭐️ {analysisResult.suitabilityScore} / 100점</span>
+            <div className="border-2 border-zinc-950 p-3 bg-amber-50/30 rounded-xl">
+              <span className="text-[9px] text-amber-700 font-black uppercase tracking-wider block">투자 성향 적합도</span>
+              <span className="text-sm font-black text-amber-600 mt-1 block">⭐️ {analysisResult.suitabilityScore} / 100</span>
             </div>
           </div>
 
-          {/* Main Layout: 2 Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* Column Left */}
-            <div className="flex flex-col gap-6">
-              {/* Core Diagnosis description */}
-              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
-                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2 flex items-center gap-1.5">
-                  🔍 주가 위치 판정 및 세부 해독
-                </h3>
-                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                  {analysisResult.marketPositionDescription}
-                </p>
-              </div>
+          {/* Infographic A: Market Cycle Phase Timeline */}
+          <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white shadow-sm mb-6">
+            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-3">
+              📈 주가 수명 주기 판정 타임라인 (Market Cycle Phase Timeline)
+            </span>
+            <div className="relative flex items-center justify-between mt-6 px-4">
+              {/* Background Track Line */}
+              <div className="absolute left-6 right-6 top-[15px] h-1.5 bg-zinc-100 rounded-full z-0 border border-zinc-200"></div>
+              
+              {[
+                { key: '발', label: '발 (바닥권)', color: 'bg-blue-600 text-blue-600 border-blue-600', textColor: 'text-blue-700' },
+                { key: '무릎', label: '무릎 (상승초기)', color: 'bg-emerald-600 text-emerald-600 border-emerald-600', textColor: 'text-emerald-700' },
+                { key: '허리', label: '허리 (추세유지)', color: 'bg-indigo-600 text-indigo-600 border-indigo-600', textColor: 'text-indigo-700' },
+                { key: '어깨', label: '어깨 (고점경계)', color: 'bg-amber-600 text-amber-600 border-amber-600', textColor: 'text-amber-700' },
+                { key: '머리', label: '머리 (상투권)', color: 'bg-rose-600 text-rose-600 border-rose-600', textColor: 'text-rose-700' }
+              ].map((pos, idx) => {
+                const isActive = analysisResult.marketPosition === pos.key;
+                return (
+                  <div key={pos.key} className="relative z-10 flex flex-col items-center flex-1">
+                    {/* Node circle */}
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center transition-all ${
+                      isActive 
+                        ? `${pos.color} text-white scale-125 ring-4 ring-zinc-950/10 font-extrabold shadow-md` 
+                        : 'bg-zinc-100 text-zinc-400 border-2 border-zinc-300 font-bold'
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    {/* Label under node */}
+                    <span className={`text-[10px] font-black mt-2.5 text-center ${
+                      isActive ? `${pos.textColor} scale-105 font-black` : 'text-zinc-500 font-medium'
+                    }`}>
+                      {pos.label}
+                    </span>
+                    {/* active highlight arrow */}
+                    {isActive && (
+                      <div className={`absolute -top-7 px-2 py-0.5 rounded text-[8px] font-black text-white ${pos.color}`}>
+                        현재 위치
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-              {/* Core Tactical Action detail */}
-              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
-                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2 flex items-center gap-1.5">
-                  ⚡ 자금 투입 및 비중 제어 전술
-                </h3>
-                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+          {/* Action Blueprint & Suitability Progress Bar */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Action Blueprint Card */}
+            <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-1">
+                  ⚡ 자금 투입 및 비중 제어 전술 처방 (Action Blueprint)
+                </span>
+                <div className="flex items-center gap-1.5 mt-2 border-b-2 border-zinc-950 pb-2 mb-3">
+                  <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+                  <span className="text-xs font-black text-zinc-900">핵심 실천 로드맵</span>
+                </div>
+                <p className="text-xs text-zinc-750 leading-relaxed font-semibold whitespace-pre-wrap">
                   {analysisResult.actionPlanDetail}
                 </p>
               </div>
             </div>
 
-            {/* Column Right */}
-            <div className="flex flex-col gap-6">
-              {/* Macro & Technical background */}
-              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
-                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2">
-                  🌐 글로벌 거시 경제 및 기술적 배경
-                </h3>
-                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap mb-3">
-                  {analysisResult.macroBackground}
-                </p>
-                {analysisResult.technicalBackground && (
-                  <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                    {analysisResult.technicalBackground}
-                  </p>
-                )}
+            {/* Suitability Infographic Card */}
+            <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-1">
+                  👤 투자 성향 부합 지표 (Portfolio Suitability Tracker)
+                </span>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-3xl font-black text-zinc-950">{analysisResult.suitabilityScore}</span>
+                  <span className="text-xs font-bold text-zinc-400">/ 100점</span>
+                </div>
               </div>
-
-              {/* Suitability comment */}
-              <div className="border border-zinc-200 p-4 rounded-xl print-avoid-break">
-                <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2">
-                  👤 투자 성향 부합성 피드백
-                </h3>
-                <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                  {analysisResult.suitabilityComment}
-                </p>
+              
+              <div className="mt-3">
+                <div className="relative h-4 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden flex">
+                  <div className="h-full bg-blue-500/20 border-r border-zinc-300" style={{ width: '40%' }}></div>
+                  <div className="h-full bg-indigo-500/20 border-r border-zinc-300" style={{ width: '30%' }}></div>
+                  <div className="h-full bg-rose-500/20" style={{ width: '30%' }}></div>
+                  
+                  {/* Marker Pin */}
+                  <div 
+                    className="absolute top-0 bottom-0 w-2.5 bg-zinc-950 border border-white shadow-lg -ml-1" 
+                    style={{ left: `${analysisResult.suitabilityScore}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-[8px] text-zinc-500 font-black mt-1 px-1">
+                  <span>안정형 (0)</span>
+                  <span>위험중립 (40)</span>
+                  <span>적극투자 (70)</span>
+                  <span>공격투자 (100)</span>
+                </div>
               </div>
+              
+              <p className="text-[11px] text-zinc-700 leading-relaxed font-medium mt-3 bg-zinc-50 p-2.5 rounded-xl border border-zinc-200">
+                💡 {analysisResult.suitabilityComment}
+              </p>
             </div>
           </div>
 
-          {/* Risk Warning Signals */}
-          <div className="border border-zinc-200 p-4 rounded-xl mb-6 print-avoid-break">
-            <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2.5">
-              ⚠️ 향후 경계해야 할 3대 위험 신호 및 청산 트리거
-            </h3>
-            <ul className="list-disc pl-5 text-xs text-zinc-700 leading-relaxed space-y-1">
-              {analysisResult.warningSignals.map((signal, idx) => (
-                <li key={idx} className="font-medium">{signal}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Portfolio Details - Only printed if isPortfolio and has holdings */}
-          {analysisResult.isPortfolio && analysisResult.portfolioSummary && (
-            <div className="print-avoid-break mb-6">
-              <h2 className="text-sm font-black text-zinc-950 border-b-2 border-zinc-900 pb-1.5 mb-3">
-                📊 판독 자산 현황 요약 (Portfolio Status)
-              </h2>
-              
-              <div className="grid grid-cols-4 gap-4 bg-zinc-50 p-3.5 border border-zinc-200 rounded-xl mb-4 text-xs font-medium">
-                <div>
-                  <span className="text-[9px] text-zinc-500 block">총평가금액 (주식)</span>
-                  <span className="text-sm font-bold text-zinc-900">{(analysisResult.portfolioSummary.totalEvaluationAmount || 0).toLocaleString()}원</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-zinc-500 block">예수금 (현금)</span>
-                  <span className="text-sm font-bold text-zinc-900">{(analysisResult.portfolioSummary.deposit || 0).toLocaleString()}원</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-zinc-500 block">총자산액</span>
-                  <span className="text-sm font-bold text-zinc-900">{((analysisResult.portfolioSummary.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary.deposit || 0)).toLocaleString()}원</span>
-                </div>
-                <div>
-                  <span className="text-[9px] text-zinc-500 block">총 평가 손익 (수익률)</span>
-                  <span className={`text-sm font-bold ${(analysisResult.portfolioSummary.totalProfitLoss || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {(analysisResult.portfolioSummary.totalProfitLoss || 0).toLocaleString()}원 ({analysisResult.portfolioSummary.totalReturnPercent?.toFixed(2)}%)
-                  </span>
-                </div>
+          {/* Macro & Technical Briefing Card */}
+          <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white mb-6">
+            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-2">
+              🌐 글로벌 거시 경제 및 기술적 배경 브리핑 (Market Intelligence Log)
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-zinc-200 pt-3">
+              <div>
+                <span className="text-[10px] font-black text-zinc-950 block mb-1">거시 환경 & 유동성 분석</span>
+                <p className="text-xs text-zinc-750 leading-relaxed whitespace-pre-wrap">{analysisResult.macroBackground}</p>
               </div>
-
-              {analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
+              {analysisResult.technicalBackground && (
                 <div>
-                  <h3 className="text-xs font-bold text-zinc-800 mb-2">개별 보유 종목 현황 및 행동 처방</h3>
-                  <table className="w-full text-left border-collapse border border-zinc-200 text-xs">
-                    <thead>
-                      <tr className="bg-zinc-100 border-b border-zinc-350 text-[9px] text-zinc-600 font-mono uppercase">
-                        <th className="p-2 border border-zinc-200">종목명 (코드)</th>
-                        <th className="p-2 border border-zinc-200 text-right">매입단가 / 현재가</th>
-                        <th className="p-2 border border-zinc-200 text-right">보유수량 / 평가액</th>
-                        <th className="p-2 border border-zinc-200 text-right">평가손익 / 수익률</th>
-                        <th className="p-2 border border-zinc-200 text-center">위치 판정</th>
-                        <th className="p-2 border border-zinc-200 text-center">AI 전술 처방</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analysisResult.portfolioHoldings.map((holding, idx) => (
-                        <tr key={idx} className="border-b border-zinc-200 text-zinc-800">
-                          <td className="p-2 border border-zinc-200 font-semibold">{holding.name} {holding.ticker ? `(${holding.ticker})` : ''}</td>
-                          <td className="p-2 border border-zinc-200 text-right">
-                            {holding.purchasePrice?.toLocaleString()}원 / {holding.currentPrice?.toLocaleString()}원
-                          </td>
-                          <td className="p-2 border border-zinc-200 text-right">
-                            {holding.quantity?.toLocaleString()}주 / {holding.evaluationAmount?.toLocaleString()}원
-                          </td>
-                          <td className="p-2 border border-zinc-200 text-right font-medium">
-                            <span className={(holding.profitLoss || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
-                              {holding.profitLoss?.toLocaleString()}원 ({holding.returnPercent?.toFixed(2)}%)
-                            </span>
-                          </td>
-                          <td className="p-2 border border-zinc-200 text-center font-bold text-purple-700">{holding.marketPosition || '무릎'}</td>
-                          <td className="p-2 border border-zinc-200 text-center font-bold text-indigo-600">{holding.actionOpinion || '추가매수'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <span className="text-[10px] font-black text-zinc-950 block mb-1">차트 및 수급 분석</span>
+                  <p className="text-xs text-zinc-750 leading-relaxed whitespace-pre-wrap">{analysisResult.technicalBackground}</p>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Infographic B: Industry Allocation Infographic (Only printed if isPortfolio and has holdings) */}
+          {analysisResult.isPortfolio && analysisResult.portfolioSummary && (
+            <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white mb-6 print-avoid-break">
+              <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4 flex items-center justify-between">
+                <span>🎨 산업 포트폴리오 자산 배분 비중 (Sector Allocation Infographic)</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-500">
+                  Total Asset: {((analysisResult.portfolioSummary.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary.deposit || 0)).toLocaleString()}원
+                </span>
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  {(() => {
+                    const holdings = analysisResult.portfolioHoldings || [];
+                    const sectorGroups = groupHoldingsBySector(holdings);
+                    const totalPortfolioValue = (analysisResult.portfolioSummary?.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary?.deposit || 0);
+                    
+                    return (
+                      <>
+                        {sectorGroups.map((group) => {
+                          const value = group.totalValue;
+                          const percentage = totalPortfolioValue > 0 ? (value / totalPortfolioValue) * 100 : 0;
+                          if (value === 0 && group.id !== 'other_sectors') return null; // Skip empty sectors
+                          
+                          const accentColor = group.id === 'energy_infra' ? 'bg-emerald-600'
+                                            : group.id === 'semiconductor_tech' ? 'bg-indigo-600'
+                                            : group.id === 'robot_materials' ? 'bg-purple-600'
+                                            : group.id === 'global_it_commodity' ? 'bg-amber-600'
+                                            : 'bg-zinc-500';
+
+                          return (
+                            <div key={group.id} className="space-y-1">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="font-bold text-zinc-800 truncate max-w-[200px]">{group.name.split(' (')[0]}</span>
+                                <span className="font-black text-zinc-950">{percentage.toFixed(1)}%</span>
+                              </div>
+                              <div className="h-2.5 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden">
+                                <div className={`h-full ${accentColor}`} style={{ width: `${percentage}%` }}></div>
+                              </div>
+                              <div className="flex justify-between text-[9px] text-zinc-500 font-medium">
+                                <span>보유자산: {value.toLocaleString()}원</span>
+                                <span className={group.totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                                  손익: {group.totalProfit >= 0 ? '+' : ''}{group.totalProfit.toLocaleString()}원
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        {analysisResult.portfolioSummary.deposit && (
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center text-xs">
+                              <span className="font-bold text-zinc-800">예수금 현금 비중 (Cash Deposit)</span>
+                              <span className="font-black text-zinc-950">
+                                {((analysisResult.portfolioSummary.deposit / totalPortfolioValue) * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="h-2.5 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden">
+                              <div className="h-full bg-blue-500" style={{ width: `${(analysisResult.portfolioSummary.deposit / totalPortfolioValue) * 100}%` }}></div>
+                            </div>
+                            <div className="text-[9px] text-zinc-500 font-medium">
+                              가용 예수금: {analysisResult.portfolioSummary.deposit.toLocaleString()}원
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <div className="flex flex-col justify-center bg-zinc-50 border border-zinc-200 p-4 rounded-xl">
+                  <h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-wider mb-2">분산 진단 총평 (Allocation Review)</h4>
+                  <p className="text-xs text-zinc-700 leading-relaxed">
+                    {analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 1 ? (
+                      `현재 총 ${analysisResult.portfolioHoldings.length}개의 종목에 자산 배분 진단이 내려졌습니다. 전력 및 그린 그리드 인프라, 반도체 가치사슬, 로봇 구동 신기술 중심의 성장 포트폴리오와 가용 예수금의 최적 조합 배분을 전술대로 이행하십시오.`
+                    ) : (
+                      `현재 단일 종목 중심의 과편중 집중 자산이 판독되었습니다. 개별 기업 및 매수 진입 시점 집중으로 인한 노이즈 리스크가 급상승할 우려가 있으므로, 주가 수명 주기가 상이한 기술 테마군 및 인프라 군으로의 전략 자산배분을 권고합니다.`
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
 
-          {/* Legal and Disclaimer Disclaimer Footer */}
+          {/* Infographic C: Risk Matrix Signals */}
+          <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white shadow-sm mb-6">
+            <h3 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+              ⚠️ 향후 경계해야 할 3대 위험 신호 및 청산 트리거 (Risk Matrix)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {analysisResult.warningSignals.map((signal, idx) => {
+                const severity = idx === 0 ? { label: 'CRITICAL', color: 'bg-rose-100 text-rose-800 border-rose-300' } 
+                               : idx === 1 ? { label: 'WARNING', color: 'bg-amber-100 text-amber-800 border-amber-300' }
+                               : { label: 'MONITOR', color: 'bg-blue-100 text-blue-800 border-blue-300' };
+                return (
+                  <div key={idx} className="border border-zinc-200 p-3.5 rounded-xl bg-zinc-50 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[9px] font-mono font-bold text-zinc-400">SIGNAL 0{idx + 1}</span>
+                        <span className={`text-[8px] font-black px-2 py-0.5 rounded border ${severity.color}`}>
+                          {severity.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-800 font-bold leading-snug">
+                        {signal}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Quantitative Asset Ledger Table (Only printed if isPortfolio and has holdings) */}
+          {analysisResult.isPortfolio && analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
+            <div className="mb-6 print-avoid-break">
+              <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-3">
+                📊 자산 판독 상세 명세 (Quantitative Asset Ledger)
+              </h2>
+              <table className="w-full text-left border-collapse border-2 border-zinc-950 text-xs">
+                <thead>
+                  <tr className="bg-zinc-100 border-b-2 border-zinc-950 text-[9px] text-zinc-900 font-black uppercase">
+                    <th className="p-2 border border-zinc-300">종목명 (코드)</th>
+                    <th className="p-2 border border-zinc-300 text-right">매입단가 / 현재가</th>
+                    <th className="p-2 border border-zinc-300 text-right">보유수량 / 평가액</th>
+                    <th className="p-2 border border-zinc-300 text-right">평가손익 / 수익률</th>
+                    <th className="p-2 border border-zinc-300 text-center">위치 판정</th>
+                    <th className="p-2 border border-zinc-300 text-center">AI 처방</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analysisResult.portfolioHoldings.map((holding, idx) => (
+                    <tr key={idx} className="border-b border-zinc-200 text-zinc-900">
+                      <td className="p-2 border border-zinc-200 font-bold">{holding.name} {holding.ticker ? `(${holding.ticker})` : ''}</td>
+                      <td className="p-2 border border-zinc-200 text-right">
+                        {holding.purchasePrice?.toLocaleString()}원 / {holding.currentPrice?.toLocaleString()}원
+                      </td>
+                      <td className="p-2 border border-zinc-200 text-right font-medium">
+                        {holding.quantity?.toLocaleString()}주 / {holding.evaluationAmount?.toLocaleString()}원
+                      </td>
+                      <td className="p-2 border border-zinc-200 text-right font-black">
+                        <span className={(holding.profitLoss || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                          {holding.profitLoss?.toLocaleString()}원 ({holding.returnPercent?.toFixed(2)}%)
+                        </span>
+                      </td>
+                      <td className="p-2 border border-zinc-200 text-center font-black text-purple-800">{holding.marketPosition || '무릎'}</td>
+                      <td className="p-2 border border-zinc-200 text-center font-black text-indigo-700">{holding.actionOpinion || '추가매수'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Legal and Disclaimer Footer */}
           <div className="border-t border-zinc-300 pt-4 mt-8 text-[9px] text-zinc-500 leading-normal text-center">
             본 진단 리포트는 사용자가 입력한 계좌 이미지 데이터와 투자 성향 파라미터를 기초로 Vision Market AI 분석 모델에 의해 독립적으로 산출되었습니다.<br />
             제시된 의견과 진단 점수는 통계적 모형 및 과거 시장 데이터를 추종한 인공지능 요약 정보이며, 미래의 투자 이익을 보장하거나 투자를 권유하는 보증이 아닙니다.<br />
             최종적인 투자 결정 및 자산 배분 책임은 전적으로 투자자 본인에게 귀속됩니다.<br />
-            <span className="font-bold font-mono uppercase block mt-1">Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
+            <span className="font-bold font-mono uppercase block mt-1 text-zinc-950">Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
           </div>
         </div>
       )}
@@ -2213,170 +2353,312 @@ export default function App() {
               {/* Modal Body (Scrollable preview sheet) */}
               <div className="p-4 sm:p-6 bg-zinc-950/60 overflow-y-auto flex-1 flex justify-center subtle-scrollbar">
                 {/* Simulated A4 Paper Sheet (Fluid width with absolute max-width to look like an elegant document) */}
-                <div className="w-full max-w-4xl bg-white text-zinc-900 p-6 sm:p-10 font-sans border border-zinc-200 shadow-2xl rounded-2xl my-4 text-left">
+                <div className="w-full max-w-4xl bg-white text-zinc-900 p-6 sm:p-10 font-sans border-2 border-zinc-950 shadow-2xl rounded-2xl my-4 text-left">
                   {/* Cover Header */}
-                  <div className="border-b-2 border-zinc-900 pb-4 mb-6 flex justify-between items-end">
+                  <div className="border-b-4 border-zinc-950 pb-4 mb-6 flex justify-between items-end">
                     <div>
-                      <span className="text-[10px] text-zinc-500 font-mono font-bold uppercase tracking-wider block">VISION MARKET AI - PORTFOLIO DIAGNOSTIC REPORT</span>
+                      <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; QUANT PORTFOLIO REPORT</span>
                       <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-1 text-zinc-950">AI 자산 포트폴리오 정밀 처방 진단 보고서</h1>
                     </div>
                     <div className="text-right hidden sm:block">
-                      <span className="text-xs text-zinc-600 font-semibold block">진단 발급일: {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                      <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">Report ID: VM-PREVIEW</span>
+                      <span className="text-xs text-zinc-955 font-black block">진단 발급일: {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <span className="text-[10px] text-zinc-550 font-mono font-bold block mt-0.5">Report ID: VM-PREVIEW</span>
                     </div>
                   </div>
 
-                  {/* Quick Metrics Banner */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 bg-zinc-50 border border-zinc-200 p-4 rounded-xl mb-6">
-                    <div>
-                      <span className="text-[9px] text-zinc-500 font-bold uppercase block">진단 대상</span>
-                      <span className="text-sm font-black text-zinc-900 mt-1 block">{analysisResult.targetTicker}</span>
+                  {/* Quick Metrics Bento */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="border-2 border-zinc-950 p-3 bg-zinc-50 rounded-xl">
+                      <span className="text-[9px] text-zinc-600 font-black uppercase tracking-wider block">진단 대상</span>
+                      <span className="text-sm font-black text-zinc-900 mt-1 block truncate">{analysisResult.targetTicker}</span>
                     </div>
-                    <div>
-                      <span className="text-[9px] text-zinc-500 font-bold uppercase block">종합 대응 기조</span>
+                    <div className="border-2 border-zinc-950 p-3 bg-indigo-50/30 rounded-xl">
+                      <span className="text-[9px] text-indigo-700 font-black uppercase tracking-wider block">종합 대응 기조</span>
                       <span className="text-sm font-black text-indigo-600 mt-1 block">🟢 {analysisResult.actionPlan}</span>
                     </div>
-                    <div>
-                      <span className="text-[9px] text-zinc-500 font-bold uppercase block">주가 수명 주기 판정</span>
+                    <div className="border-2 border-zinc-950 p-3 bg-purple-50/30 rounded-xl">
+                      <span className="text-[9px] text-purple-700 font-black uppercase tracking-wider block">주가 수명 주기</span>
                       <span className="text-sm font-black text-purple-600 mt-1 block">📊 {analysisResult.marketPosition} 단계</span>
                     </div>
-                    <div>
-                      <span className="text-[9px] text-zinc-500 font-bold uppercase block">투자 성향 적합도</span>
-                      <span className="text-sm font-black text-amber-600 mt-1 block">⭐️ {analysisResult.suitabilityScore} / 100점</span>
+                    <div className="border-2 border-zinc-950 p-3 bg-amber-50/30 rounded-xl">
+                      <span className="text-[9px] text-amber-700 font-black uppercase tracking-wider block">투자 성향 적합도</span>
+                      <span className="text-sm font-black text-amber-600 mt-1 block">⭐️ {analysisResult.suitabilityScore} / 100</span>
                     </div>
                   </div>
 
-                  {/* Main Layout: 2 Columns */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    {/* Column Left */}
-                    <div className="flex flex-col gap-6">
-                      {/* Core Diagnosis description */}
-                      <div className="border border-zinc-200 p-4 rounded-xl">
-                        <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2 flex items-center gap-1.5">
-                          🔍 주가 위치 판정 및 세부 해독
-                        </h3>
-                        <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                          {analysisResult.marketPositionDescription}
-                        </p>
-                      </div>
+                  {/* Infographic A: Market Cycle Phase Timeline */}
+                  <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white shadow-sm mb-6">
+                    <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-3">
+                      📈 주가 수명 주기 판정 타임라인 (Market Cycle Phase Timeline)
+                    </span>
+                    <div className="relative flex items-center justify-between mt-6 px-4">
+                      {/* Background Track Line */}
+                      <div className="absolute left-6 right-6 top-[15px] h-1.5 bg-zinc-100 rounded-full z-0 border border-zinc-200"></div>
+                      
+                      {[
+                        { key: '발', label: '발 (바닥권)', color: 'bg-blue-600 text-blue-600 border-blue-600', textColor: 'text-blue-700' },
+                        { key: '무릎', label: '무릎 (상승초기)', color: 'bg-emerald-600 text-emerald-600 border-emerald-600', textColor: 'text-emerald-700' },
+                        { key: '허리', label: '허리 (추세유지)', color: 'bg-indigo-600 text-indigo-600 border-indigo-600', textColor: 'text-indigo-700' },
+                        { key: '어깨', label: '어깨 (고점경계)', color: 'bg-amber-600 text-amber-600 border-amber-600', textColor: 'text-amber-700' },
+                        { key: '머리', label: '머리 (상투권)', color: 'bg-rose-600 text-rose-600 border-rose-600', textColor: 'text-rose-700' }
+                      ].map((pos, idx) => {
+                        const isActive = analysisResult.marketPosition === pos.key;
+                        return (
+                          <div key={pos.key} className="relative z-10 flex flex-col items-center flex-1">
+                            {/* Node circle */}
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center transition-all ${
+                              isActive 
+                                ? `${pos.color} text-white scale-125 ring-4 ring-zinc-950/10 font-extrabold shadow-md` 
+                                : 'bg-zinc-100 text-zinc-400 border-2 border-zinc-300 font-bold'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                            {/* Label under node */}
+                            <span className={`text-[10px] font-black mt-2.5 text-center ${
+                              isActive ? `${pos.textColor} scale-105 font-black` : 'text-zinc-500 font-medium'
+                            }`}>
+                              {pos.label}
+                            </span>
+                            {/* active highlight arrow */}
+                            {isActive && (
+                              <div className={`absolute -top-7 px-2 py-0.5 rounded text-[8px] font-black text-white ${pos.color}`}>
+                                현재 위치
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                      {/* Core Tactical Action detail */}
-                      <div className="border border-zinc-200 p-4 rounded-xl">
-                        <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2 flex items-center gap-1.5">
-                          ⚡ 자금 투입 및 비중 제어 전술
-                        </h3>
-                        <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
+                  {/* Action Blueprint & Suitability Progress Bar */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    {/* Action Blueprint Card */}
+                    <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-1">
+                          ⚡ 자금 투입 및 비중 제어 전술 처방 (Action Blueprint)
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-2 border-b-2 border-zinc-950 pb-2 mb-3">
+                          <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+                          <span className="text-xs font-black text-zinc-900">핵심 실천 로드맵</span>
+                        </div>
+                        <p className="text-xs text-zinc-750 leading-relaxed font-semibold whitespace-pre-wrap">
                           {analysisResult.actionPlanDetail}
                         </p>
                       </div>
                     </div>
 
-                    {/* Column Right */}
-                    <div className="flex flex-col gap-6">
-                      {/* Macro & Technical background */}
-                      <div className="border border-zinc-200 p-4 rounded-xl">
-                        <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2">
-                          🌐 글로벌 거시 경제 및 기술적 배경
-                        </h3>
-                        <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap mb-3">
-                          {analysisResult.macroBackground}
-                        </p>
-                        {analysisResult.technicalBackground && (
-                          <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                            {analysisResult.technicalBackground}
-                          </p>
-                        )}
+                    {/* Suitability Infographic Card */}
+                    <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-1">
+                          👤 투자 성향 부합 지표 (Portfolio Suitability Tracker)
+                        </span>
+                        <div className="flex items-baseline gap-2 mt-2">
+                          <span className="text-3xl font-black text-zinc-950">{analysisResult.suitabilityScore}</span>
+                          <span className="text-xs font-bold text-zinc-400">/ 100점</span>
+                        </div>
                       </div>
-
-                      {/* Suitability comment */}
-                      <div className="border border-zinc-200 p-4 rounded-xl">
-                        <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2">
-                          👤 투자 성향 부합성 피드백
-                        </h3>
-                        <p className="text-xs text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                          {analysisResult.suitabilityComment}
-                        </p>
+                      
+                      <div className="mt-3">
+                        <div className="relative h-4 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden flex">
+                          <div className="h-full bg-blue-500/20 border-r border-zinc-300" style={{ width: '40%' }}></div>
+                          <div className="h-full bg-indigo-500/20 border-r border-zinc-300" style={{ width: '30%' }}></div>
+                          <div className="h-full bg-rose-500/20" style={{ width: '30%' }}></div>
+                          
+                          {/* Marker Pin */}
+                          <div 
+                            className="absolute top-0 bottom-0 w-2.5 bg-zinc-950 border border-white shadow-lg -ml-1" 
+                            style={{ left: `${analysisResult.suitabilityScore}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-[8px] text-zinc-500 font-black mt-1 px-1">
+                          <span>안정형 (0)</span>
+                          <span>위험중립 (40)</span>
+                          <span>적극투자 (70)</span>
+                          <span>공격투자 (100)</span>
+                        </div>
                       </div>
+                      
+                      <p className="text-[11px] text-zinc-700 leading-relaxed font-medium mt-3 bg-zinc-50 p-2.5 rounded-xl border border-zinc-200">
+                        💡 {analysisResult.suitabilityComment}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Risk Warning Signals */}
-                  <div className="border border-zinc-200 p-4 rounded-xl mb-6">
-                    <h3 className="text-xs font-extrabold text-zinc-950 uppercase tracking-wider border-b border-zinc-200 pb-1.5 mb-2.5">
-                      ⚠️ 향후 경계해야 할 3대 위험 신호 및 청산 트리거
-                    </h3>
-                    <ul className="list-disc pl-5 text-xs text-zinc-700 leading-relaxed space-y-1">
-                      {analysisResult.warningSignals.map((signal, idx) => (
-                        <li key={idx} className="font-medium text-zinc-800">{signal}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Portfolio Details - Only printed if isPortfolio and has holdings */}
-                  {analysisResult.isPortfolio && analysisResult.portfolioSummary && (
-                    <div className="mb-6">
-                      <h2 className="text-sm font-black text-zinc-950 border-b-2 border-zinc-900 pb-1.5 mb-3">
-                        📊 판독 자산 현황 요약 (Portfolio Status)
-                      </h2>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-zinc-50 p-3.5 border border-zinc-200 rounded-xl mb-4 text-xs font-medium">
-                        <div>
-                          <span className="text-[9px] text-zinc-500 block">총평가금액 (주식)</span>
-                          <span className="text-xs sm:text-sm font-bold text-zinc-900">{(analysisResult.portfolioSummary.totalEvaluationAmount || 0).toLocaleString()}원</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-zinc-500 block">예수금 (현금)</span>
-                          <span className="text-xs sm:text-sm font-bold text-zinc-900">{(analysisResult.portfolioSummary.deposit || 0).toLocaleString()}원</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-zinc-500 block">총자산액</span>
-                          <span className="text-xs sm:text-sm font-bold text-zinc-900">{((analysisResult.portfolioSummary.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary.deposit || 0)).toLocaleString()}원</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-zinc-500 block">총 평가 손익 (수익률)</span>
-                          <span className={`text-xs sm:text-sm font-bold ${(analysisResult.portfolioSummary.totalProfitLoss || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {(analysisResult.portfolioSummary.totalProfitLoss || 0).toLocaleString()}원 ({analysisResult.portfolioSummary.totalReturnPercent?.toFixed(2)}%)
-                          </span>
-                        </div>
+                  {/* Macro & Technical Briefing Card */}
+                  <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white mb-6">
+                    <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-2">
+                      🌐 글로벌 거시 경제 및 기술적 배경 브리핑 (Market Intelligence Log)
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-zinc-200 pt-3">
+                      <div>
+                        <span className="text-[10px] font-black text-zinc-950 block mb-1">거시 환경 & 유동성 분석</span>
+                        <p className="text-xs text-zinc-750 leading-relaxed whitespace-pre-wrap">{analysisResult.macroBackground}</p>
                       </div>
-
-                      {analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
-                        <div className="overflow-x-auto">
-                          <h3 className="text-xs font-bold text-zinc-800 mb-2">개별 보유 종목 현황 및 행동 처방</h3>
-                          <table className="w-full min-w-[600px] text-left border-collapse border border-zinc-200 text-xs">
-                            <thead>
-                              <tr className="bg-zinc-100 border-b border-zinc-350 text-[9px] text-zinc-600 font-mono uppercase">
-                                <th className="p-2 border border-zinc-200">종목명 (코드)</th>
-                                <th className="p-2 border border-zinc-200 text-right">매입단가 / 현재가</th>
-                                <th className="p-2 border border-zinc-200 text-right">보유수량 / 평가액</th>
-                                <th className="p-2 border border-zinc-200 text-right">평가손익 / 수익률</th>
-                                <th className="p-2 border border-zinc-200 text-center">위치 판정</th>
-                                <th className="p-2 border border-zinc-200 text-center">AI 전술 처방</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {analysisResult.portfolioHoldings.map((holding, idx) => (
-                                <tr key={idx} className="border-b border-zinc-200 text-zinc-800">
-                                  <td className="p-2 border border-zinc-200 font-semibold">{holding.name} {holding.ticker ? `(${holding.ticker})` : ''}</td>
-                                  <td className="p-2 border border-zinc-200 text-right">
-                                    {holding.purchasePrice?.toLocaleString()}원 / {holding.currentPrice?.toLocaleString()}원
-                                  </td>
-                                  <td className="p-2 border border-zinc-200 text-right">
-                                    {holding.quantity?.toLocaleString()}주 / {holding.evaluationAmount?.toLocaleString()}원
-                                  </td>
-                                  <td className="p-2 border border-zinc-200 text-right font-medium">
-                                    <span className={(holding.profitLoss || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
-                                      {holding.profitLoss?.toLocaleString()}원 ({holding.returnPercent?.toFixed(2)}%)
-                                    </span>
-                                  </td>
-                                  <td className="p-2 border border-zinc-200 text-center font-bold text-purple-700">{holding.marketPosition || '무릎'}</td>
-                                  <td className="p-2 border border-zinc-200 text-center font-bold text-indigo-600">{holding.actionOpinion || '추가매수'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                      {analysisResult.technicalBackground && (
+                        <div>
+                          <span className="text-[10px] font-black text-zinc-950 block mb-1">차트 및 수급 분석</span>
+                          <p className="text-xs text-zinc-750 leading-relaxed whitespace-pre-wrap">{analysisResult.technicalBackground}</p>
                         </div>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Infographic B: Industry Allocation Infographic (Only printed if isPortfolio and has holdings) */}
+                  {analysisResult.isPortfolio && analysisResult.portfolioSummary && (
+                    <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white mb-6 print-avoid-break">
+                      <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4 flex items-center justify-between">
+                        <span>🎨 산업 포트폴리오 자산 배분 비중 (Sector Allocation Infographic)</span>
+                        <span className="text-[10px] font-mono font-bold text-zinc-500">
+                          Total Asset: {((analysisResult.portfolioSummary.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary.deposit || 0)).toLocaleString()}원
+                        </span>
+                      </h2>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          {(() => {
+                            const holdings = analysisResult.portfolioHoldings || [];
+                            const sectorGroups = groupHoldingsBySector(holdings);
+                            const totalPortfolioValue = (analysisResult.portfolioSummary?.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary?.deposit || 0);
+                            
+                            return (
+                              <>
+                                {sectorGroups.map((group) => {
+                                  const value = group.totalValue;
+                                  const percentage = totalPortfolioValue > 0 ? (value / totalPortfolioValue) * 100 : 0;
+                                  if (value === 0 && group.id !== 'other_sectors') return null; // Skip empty sectors
+                                  
+                                  const accentColor = group.id === 'energy_infra' ? 'bg-emerald-600'
+                                                    : group.id === 'semiconductor_tech' ? 'bg-indigo-600'
+                                                    : group.id === 'robot_materials' ? 'bg-purple-600'
+                                                    : group.id === 'global_it_commodity' ? 'bg-amber-600'
+                                                    : 'bg-zinc-500';
+
+                                  return (
+                                    <div key={group.id} className="space-y-1">
+                                      <div className="flex justify-between items-center text-xs">
+                                        <span className="font-bold text-zinc-800 truncate max-w-[200px]">{group.name.split(' (')[0]}</span>
+                                        <span className="font-black text-zinc-950">{percentage.toFixed(1)}%</span>
+                                      </div>
+                                      <div className="h-2.5 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden">
+                                        <div className={`h-full ${accentColor}`} style={{ width: `${percentage}%` }}></div>
+                                      </div>
+                                      <div className="flex justify-between text-[9px] text-zinc-500 font-medium">
+                                        <span>보유자산: {value.toLocaleString()}원</span>
+                                        <span className={group.totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                                          손익: {group.totalProfit >= 0 ? '+' : ''}{group.totalProfit.toLocaleString()}원
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                
+                                {analysisResult.portfolioSummary.deposit && (
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-center text-xs">
+                                      <span className="font-bold text-zinc-800">예수금 현금 비중 (Cash Deposit)</span>
+                                      <span className="font-black text-zinc-950">
+                                        {((analysisResult.portfolioSummary.deposit / totalPortfolioValue) * 100).toFixed(1)}%
+                                      </span>
+                                    </div>
+                                    <div className="h-2.5 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden">
+                                      <div className="h-full bg-blue-500" style={{ width: `${(analysisResult.portfolioSummary.deposit / totalPortfolioValue) * 100}%` }}></div>
+                                    </div>
+                                    <div className="text-[9px] text-zinc-500 font-medium">
+                                      가용 예수금: {analysisResult.portfolioSummary.deposit.toLocaleString()}원
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="flex flex-col justify-center bg-zinc-50 border border-zinc-200 p-4 rounded-xl">
+                          <h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-wider mb-2">분산 진단 총평 (Allocation Review)</h4>
+                          <p className="text-xs text-zinc-700 leading-relaxed">
+                            {analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 1 ? (
+                              `현재 총 ${analysisResult.portfolioHoldings.length}개의 종목에 자산 배분 진단이 내려졌습니다. 전력 및 그린 그리드 인프라, 반도체 가치사슬, 로봇 구동 신기술 중심의 성장 포트폴리오와 가용 예수금의 최적 조합 배분을 전술대로 이행하십시오.`
+                            ) : (
+                              `현재 단일 종목 중심의 과편중 집중 자산이 판독되었습니다. 개별 기업 및 매수 진입 시점 집중으로 인한 노이즈 리스크가 급상승할 우려가 있으므로, 주가 수명 주기가 상이한 기술 테마군 및 인프라 군으로의 전략 자산배분을 권고합니다.`
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Infographic C: Risk Matrix Signals */}
+                  <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white shadow-sm mb-6">
+                    <h3 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+                      ⚠️ 향후 경계해야 할 3대 위험 신호 및 청산 트리거 (Risk Matrix)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {analysisResult.warningSignals.map((signal, idx) => {
+                        const severity = idx === 0 ? { label: 'CRITICAL', color: 'bg-rose-100 text-rose-800 border-rose-300' } 
+                                       : idx === 1 ? { label: 'WARNING', color: 'bg-amber-100 text-amber-800 border-amber-300' }
+                                       : { label: 'MONITOR', color: 'bg-blue-100 text-blue-800 border-blue-300' };
+                        return (
+                          <div key={idx} className="border border-zinc-200 p-3.5 rounded-xl bg-zinc-50 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-[9px] font-mono font-bold text-zinc-400">SIGNAL 0{idx + 1}</span>
+                                <span className={`text-[8px] font-black px-2 py-0.5 rounded border ${severity.color}`}>
+                                  {severity.label}
+                                </span>
+                              </div>
+                              <p className="text-xs text-zinc-800 font-bold leading-snug">
+                                {signal}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Quantitative Asset Ledger Table (Only printed if isPortfolio and has holdings) */}
+                  {analysisResult.isPortfolio && analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-3">
+                        📊 자산 판독 상세 명세 (Quantitative Asset Ledger)
+                      </h2>
+                      <div className="overflow-x-auto subtle-scrollbar">
+                        <table className="w-full min-w-[600px] text-left border-collapse border-2 border-zinc-950 text-xs">
+                          <thead>
+                            <tr className="bg-zinc-100 border-b-2 border-zinc-950 text-[9px] text-zinc-900 font-black uppercase">
+                              <th className="p-2 border border-zinc-300">종목명 (코드)</th>
+                              <th className="p-2 border border-zinc-300 text-right">매입단가 / 현재가</th>
+                              <th className="p-2 border border-zinc-300 text-right">보유수량 / 평가액</th>
+                              <th className="p-2 border border-zinc-300 text-right">평가손익 / 수익률</th>
+                              <th className="p-2 border border-zinc-300 text-center">위치 판정</th>
+                              <th className="p-2 border border-zinc-300 text-center">AI 처방</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {analysisResult.portfolioHoldings.map((holding, idx) => (
+                              <tr key={idx} className="border-b border-zinc-200 text-zinc-900">
+                                <td className="p-2 border border-zinc-200 font-bold">{holding.name} {holding.ticker ? `(${holding.ticker})` : ''}</td>
+                                <td className="p-2 border border-zinc-200 text-right">
+                                  {holding.purchasePrice?.toLocaleString()}원 / {holding.currentPrice?.toLocaleString()}원
+                                </td>
+                                <td className="p-2 border border-zinc-200 text-right font-medium">
+                                  {holding.quantity?.toLocaleString()}주 / {holding.evaluationAmount?.toLocaleString()}원
+                                </td>
+                                <td className="p-2 border border-zinc-200 text-right font-black">
+                                  <span className={(holding.profitLoss || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                                    {holding.profitLoss?.toLocaleString()}원 ({holding.returnPercent?.toFixed(2)}%)
+                                  </span>
+                                </td>
+                                <td className="p-2 border border-zinc-200 text-center font-black text-purple-800">{holding.marketPosition || '무릎'}</td>
+                                <td className="p-2 border border-zinc-200 text-center font-black text-indigo-700">{holding.actionOpinion || '추가매수'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
 
@@ -2385,7 +2667,7 @@ export default function App() {
                     본 진단 리포트는 사용자가 입력한 계좌 이미지 데이터와 투자 성향 파라미터를 기초로 Vision Market AI 분석 모델에 의해 독립적으로 산출되었습니다.<br />
                     제시된 의견과 진단 점수는 통계적 모형 및 과거 시장 데이터를 추종한 인공지능 요약 정보이며, 미래의 투자 이익을 보장하거나 투자를 권유하는 보증이 아닙니다.<br />
                     최종적인 투자 결정 및 자산 배분 책임은 전적으로 투자자 본인에게 귀속됩니다.<br />
-                    <span className="font-bold font-mono uppercase block mt-1">Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
+                    <span className="font-bold font-mono uppercase block mt-1 text-zinc-950">Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
                   </div>
                 </div>
               </div>
