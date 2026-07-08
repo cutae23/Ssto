@@ -2378,7 +2378,7 @@ export default function App() {
           <div className="grid grid-cols-4 gap-4 mb-6">
             <div className="border-2 border-zinc-950 p-3 bg-zinc-50 rounded-xl">
               <span className="text-[12px] text-zinc-600 font-black uppercase tracking-wider block" style={{ fontSize: '9pt' }}>진단 대상</span>
-              <span className="text-sm font-black text-zinc-950 mt-1 block truncate">{analysisResult.targetTicker}</span>
+              <span className="text-sm font-black text-zinc-950 mt-1 block">{analysisResult.targetTicker}</span>
             </div>
             <div className="border-2 border-zinc-950 p-3 bg-indigo-50/30 rounded-xl">
               <span className="text-[12px] text-indigo-700 font-black uppercase tracking-wider block" style={{ fontSize: '9pt' }}>종합 대응 기조</span>
@@ -2978,7 +2978,7 @@ export default function App() {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div className="border-2 border-zinc-950 p-3 bg-zinc-50 rounded-xl">
                       <span className="text-[9px] text-zinc-600 font-black uppercase tracking-wider block">진단 대상</span>
-                      <span className="text-sm font-black text-zinc-900 mt-1 block truncate">{analysisResult.targetTicker}</span>
+                      <span className="text-sm font-black text-zinc-900 mt-1 block">{analysisResult.targetTicker}</span>
                     </div>
                     <div className="border-2 border-zinc-950 p-3 bg-indigo-50/30 rounded-xl">
                       <span className="text-[9px] text-indigo-700 font-black uppercase tracking-wider block">종합 대응 기조</span>
