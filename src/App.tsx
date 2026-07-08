@@ -1299,6 +1299,21 @@ export default function App() {
                         <Printer className={`h-3.5 w-3.5 ${isSavingPdf ? 'animate-spin' : ''}`} />
                         <span>{isSavingPdf ? 'PDF 생성 중...' : 'PDF 리포트 저장'}</span>
                       </button>
+                      <button
+                        onClick={() => {
+                          const confirmPrint = confirm(
+                            '브라우저 인쇄 기능을 사용하여 고해상도 PDF 장표로 즉시 인쇄/저장합니다. (모바일 및 전 기기 100% 호환)\n\n인쇄창의 대상(Printer) 설정을 [PDF로 저장] 또는 [Save as PDF]로 선택하시면 고화질 벡터 PDF 파일로 스마트폰/PC에 깔끔하게 저장됩니다.'
+                          );
+                          if (confirmPrint) {
+                            window.print();
+                          }
+                        }}
+                        className="flex items-center justify-center gap-1.5 text-xs font-black px-3.5 py-1.5 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-750 text-white transition-all cursor-pointer shadow-md active:scale-95"
+                        title="자동 저장이 지연되거나 오차가 발생할 때 직접 고해상도로 인쇄 및 PDF로 저장할 수 있습니다."
+                      >
+                        <Printer className="h-3.5 w-3.5 text-zinc-400" />
+                        <span>Plan B (인쇄/저장)</span>
+                      </button>
                     </div>
                   </div>
 
