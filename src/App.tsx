@@ -1197,6 +1197,10 @@ export default function App() {
               <p className="leading-relaxed">
                 올리신 계좌 캡처 이미지는 AI OCR 텍스트 해독 및 투자 분석 판단용으로만 일회성으로 즉시 연동되며, 별도로 서버나 데이터베이스에 영구 보존되지 않으므로 안심하고 사용하셔도 됩니다.
               </p>
+              <div className="border-t border-zinc-850 pt-2 mt-1 text-[11px] text-amber-400/85 leading-relaxed flex items-start gap-1.5">
+                <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-500" />
+                <span><strong>중요 알림:</strong> Gemini AI는 완벽하지 않으며 실수할 수 있습니다. 수치 해독이나 투자 판단에 오류가 있을 수 있으므로 투자 실행 전 반드시 실제 내역을 교차 검증하시기 바랍니다.</span>
+              </div>
             </div>
           </div>
 
@@ -2332,8 +2336,13 @@ export default function App() {
       </main>
       
       {/* 4. Footer */}
-      <footer className="print:hidden border-t border-zinc-900 bg-zinc-950/40 py-5 text-center text-[10px] text-zinc-650 font-mono">
-        &copy; {new Date().getFullYear()} VISION MARKET AI &middot; Elite Multimodal Stock & Portfolio OCR Diagnosis. All rights Reserved.
+      <footer className="print:hidden border-t border-zinc-900 bg-zinc-950/40 py-6 text-center text-xs font-sans flex flex-col gap-2 items-center justify-center px-4">
+        <div className="text-zinc-500 max-w-2xl leading-relaxed text-[11px]">
+          ⚠️ <strong>알림:</strong> Gemini AI는 인공지능 분석 모형 특성상 실수가 발생할 수 있습니다. 본 진단 정보와 개별 종목 처방은 참고 사항일 뿐이며 실제 자산 운용 및 투자 결정에 따른 책임은 본인에게 있습니다.
+        </div>
+        <div className="text-[10px] text-zinc-600 font-mono mt-1">
+          &copy; {new Date().getFullYear()} VISION MARKET AI &middot; Elite Multimodal Stock & Portfolio OCR Diagnosis. All rights Reserved.
+        </div>
       </footer>
 
       {/* 5. Print-Only Beautiful PDF Report Template */}
@@ -2350,38 +2359,44 @@ export default function App() {
           {/* Cover Header */}
           <div className="border-b-4 border-zinc-950 pb-4 mb-6 flex justify-between items-end">
             <div>
-              <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; QUANT PORTFOLIO REPORT</span>
+              <span className="text-[12px] text-zinc-900 font-mono font-black uppercase tracking-widest block" style={{ fontSize: '9pt' }}>VISION MARKET AI &middot; QUANT PORTFOLIO REPORT</span>
               <h1 className="text-2xl font-black tracking-tight mt-1.5 text-zinc-950">AI 자산 포트폴리오 정밀 처방 진단 보고서</h1>
             </div>
             <div className="text-right">
               <span className="text-xs text-zinc-950 font-black block">진단 발급일: {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              <span className="text-[10px] text-zinc-600 font-mono font-bold block mt-0.5 uppercase">Report ID: VM-{Math.floor(100000 + Math.random() * 900000)}</span>
+              <span className="text-[12px] text-zinc-600 font-mono font-bold block mt-0.5 uppercase" style={{ fontSize: '9pt' }}>Report ID: VM-{Math.floor(100000 + Math.random() * 900000)}</span>
             </div>
+          </div>
+
+          {/* AI Disclaimer Bar on Page 1 */}
+          <div className="mb-6 p-3 bg-amber-50 border-2 border-amber-300 rounded-xl text-[12px] text-amber-900 font-semibold flex items-start gap-2" style={{ fontSize: '9.5pt' }}>
+            <span className="font-extrabold text-[12px] text-amber-700" style={{ fontSize: '9.5pt' }}>⚠️ 중요 알림:</span>
+            <span>본 진단 보고서는 Gemini AI 분석 모형에 기반하므로 수치 판독이나 종목 추천에 실수가 있을 수 있습니다. 최종 투자 책임은 본인에게 귀속됩니다.</span>
           </div>
 
           {/* Quick Metrics Dashboard Bento */}
           <div className="grid grid-cols-4 gap-4 mb-6">
             <div className="border-2 border-zinc-950 p-3 bg-zinc-50 rounded-xl">
-              <span className="text-[9px] text-zinc-600 font-black uppercase tracking-wider block">진단 대상</span>
+              <span className="text-[12px] text-zinc-600 font-black uppercase tracking-wider block" style={{ fontSize: '9pt' }}>진단 대상</span>
               <span className="text-sm font-black text-zinc-950 mt-1 block truncate">{analysisResult.targetTicker}</span>
             </div>
             <div className="border-2 border-zinc-950 p-3 bg-indigo-50/30 rounded-xl">
-              <span className="text-[9px] text-indigo-700 font-black uppercase tracking-wider block">종합 대응 기조</span>
+              <span className="text-[12px] text-indigo-700 font-black uppercase tracking-wider block" style={{ fontSize: '9pt' }}>종합 대응 기조</span>
               <span className="text-sm font-black text-indigo-600 mt-1 block">🟢 {analysisResult.actionPlan}</span>
             </div>
             <div className="border-2 border-zinc-950 p-3 bg-purple-50/30 rounded-xl">
-              <span className="text-[9px] text-purple-700 font-black uppercase tracking-wider block">주가 수명 주기</span>
+              <span className="text-[12px] text-purple-700 font-black uppercase tracking-wider block" style={{ fontSize: '9pt' }}>주가 수명 주기</span>
               <span className="text-sm font-black text-purple-600 mt-1 block">📊 {analysisResult.marketPosition} 단계</span>
             </div>
             <div className="border-2 border-zinc-950 p-3 bg-amber-50/30 rounded-xl">
-              <span className="text-[9px] text-amber-700 font-black uppercase tracking-wider block">투자 성향 적합도</span>
+              <span className="text-[12px] text-amber-700 font-black uppercase tracking-wider block" style={{ fontSize: '9pt' }}>투자 성향 적합도</span>
               <span className="text-sm font-black text-amber-600 mt-1 block">⭐️ {analysisResult.suitabilityScore} / 100</span>
             </div>
           </div>
 
           {/* Infographic A: Market Cycle Phase Timeline */}
           <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white shadow-sm mb-6">
-            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-3">
+            <span className="text-[12px] font-black uppercase text-zinc-500 tracking-wider block mb-3" style={{ fontSize: '9pt' }}>
               📈 주가 수명 주기 판정 타임라인 (Market Cycle Phase Timeline)
             </span>
             <div className="relative flex items-center justify-between mt-6 px-4">
@@ -2407,14 +2422,14 @@ export default function App() {
                       {idx + 1}
                     </div>
                     {/* Label under node */}
-                    <span className={`text-[10px] font-black mt-2.5 text-center ${
+                    <span className={`text-[12px] font-black mt-2.5 text-center ${
                       isActive ? `${pos.textColor} scale-105 font-black` : 'text-zinc-500 font-medium'
-                    }`}>
+                    }`} style={{ fontSize: '9pt' }}>
                       {pos.label}
                     </span>
                     {/* active highlight arrow */}
                     {isActive && (
-                      <div className={`absolute -top-7 px-2 py-0.5 rounded text-[8px] font-black text-white ${pos.color}`}>
+                      <div className={`absolute -top-7 px-2 py-0.5 rounded text-[12px] font-black text-white ${pos.color}`} style={{ fontSize: '9pt' }}>
                         현재 위치
                       </div>
                     )}
@@ -2429,7 +2444,7 @@ export default function App() {
             {/* Action Blueprint Card */}
             <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-1">
+                <span className="text-xs font-black uppercase text-zinc-500 tracking-wider block mb-1">
                   ⚡ 자금 투입 및 비중 제어 전술 처방 (Action Blueprint)
                 </span>
                 <div className="flex items-center gap-1.5 mt-2 border-b-2 border-zinc-950 pb-2 mb-3">
@@ -2445,7 +2460,7 @@ export default function App() {
             {/* Suitability Infographic Card */}
             <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-1">
+                <span className="text-xs font-black uppercase text-zinc-500 tracking-wider block mb-1">
                   👤 투자 성향 부합 지표 (Portfolio Suitability Tracker)
                 </span>
                 <div className="flex items-baseline gap-2 mt-2">
@@ -2466,7 +2481,7 @@ export default function App() {
                     style={{ left: `${analysisResult.suitabilityScore}%` }}
                   ></div>
                 </div>
-                <div className="flex justify-between text-[8px] text-zinc-500 font-black mt-1 px-1">
+                <div className="flex justify-between text-xs text-zinc-500 font-black mt-1 px-1">
                   <span>안정형 (0)</span>
                   <span>위험중립 (40)</span>
                   <span>적극투자 (70)</span>
@@ -2474,7 +2489,7 @@ export default function App() {
                 </div>
               </div>
               
-              <p className="text-[11px] text-zinc-700 leading-relaxed font-medium mt-3 bg-zinc-50 p-2.5 rounded-xl border border-zinc-200">
+              <p className="text-xs text-zinc-700 leading-relaxed font-medium mt-3 bg-zinc-50 p-2.5 rounded-xl border border-zinc-200">
                 💡 {analysisResult.suitabilityComment}
               </p>
             </div>
@@ -2489,23 +2504,23 @@ export default function App() {
           >
             {/* Section Header */}
             <div className="border-b-2 border-zinc-950 pb-2 mb-6 flex justify-between items-end">
-              <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; MACRO & ALLOCATION ANALYSIS</span>
-              <span className="text-[9px] text-zinc-500 font-mono font-bold">PAGE 2</span>
+              <span className="text-xs text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; MACRO & ALLOCATION ANALYSIS</span>
+              <span className="text-xs text-zinc-500 font-mono font-bold">PAGE 2</span>
             </div>
 
           {/* Macro & Technical Briefing Card */}
           <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white mb-6">
-            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-wider block mb-2">
+            <span className="text-xs font-black uppercase text-zinc-500 tracking-wider block mb-2">
               🌐 글로벌 거시 경제 및 기술적 배경 브리핑 (Market Intelligence Log)
             </span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-zinc-200 pt-3">
               <div>
-                <span className="text-[10px] font-black text-zinc-950 block mb-1">거시 환경 & 유동성 분석</span>
+                <span className="text-xs font-black text-zinc-950 block mb-1">거시 환경 & 유동성 분석</span>
                 <p className="text-xs text-zinc-750 leading-relaxed whitespace-pre-wrap">{analysisResult.macroBackground}</p>
               </div>
               {analysisResult.technicalBackground && (
                 <div>
-                  <span className="text-[10px] font-black text-zinc-950 block mb-1">차트 및 수급 분석</span>
+                  <span className="text-xs font-black text-zinc-950 block mb-1">차트 및 수급 분석</span>
                   <p className="text-xs text-zinc-750 leading-relaxed whitespace-pre-wrap">{analysisResult.technicalBackground}</p>
                 </div>
               )}
@@ -2517,7 +2532,7 @@ export default function App() {
             <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white mb-6 print-avoid-break">
               <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4 flex items-center justify-between">
                 <span>🎨 산업 포트폴리오 자산 배분 비중 (Sector Allocation Infographic)</span>
-                <span className="text-[10px] font-mono font-bold text-zinc-500">
+                <span className="text-xs font-mono font-bold text-zinc-500">
                   Total Asset: {((analysisResult.portfolioSummary.totalEvaluationAmount || 0) + (analysisResult.portfolioSummary.deposit || 0)).toLocaleString()}원
                 </span>
               </h2>
@@ -2551,7 +2566,7 @@ export default function App() {
                               <div className="h-2.5 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden">
                                 <div className={`h-full ${accentColor}`} style={{ width: `${percentage}%` }}></div>
                               </div>
-                              <div className="flex justify-between text-[9px] text-zinc-500 font-medium">
+                              <div className="flex justify-between text-xs text-zinc-500 font-medium">
                                 <span>보유자산: {value.toLocaleString()}원</span>
                                 <span className={group.totalProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                                   손익: {group.totalProfit >= 0 ? '+' : ''}{group.totalProfit.toLocaleString()}원
@@ -2572,7 +2587,7 @@ export default function App() {
                             <div className="h-2.5 bg-zinc-100 rounded-full border border-zinc-200 overflow-hidden">
                               <div className="h-full bg-blue-500" style={{ width: `${(analysisResult.portfolioSummary.deposit / totalPortfolioValue) * 100}%` }}></div>
                             </div>
-                            <div className="text-[9px] text-zinc-500 font-medium">
+                            <div className="text-xs text-zinc-500 font-medium">
                               가용 예수금: {analysisResult.portfolioSummary.deposit.toLocaleString()}원
                             </div>
                           </div>
@@ -2583,7 +2598,7 @@ export default function App() {
                 </div>
 
                 <div className="flex flex-col justify-center bg-zinc-50 border border-zinc-200 p-4 rounded-xl">
-                  <h4 className="text-[11px] font-black text-zinc-900 uppercase tracking-wider mb-2">분산 진단 총평 (Allocation Review)</h4>
+                  <h4 className="text-xs font-black text-zinc-900 uppercase tracking-wider mb-2">분산 진단 총평 (Allocation Review)</h4>
                   <p className="text-xs text-zinc-700 leading-relaxed">
                     {analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 1 ? (
                       `현재 총 ${analysisResult.portfolioHoldings.length}개의 종목에 자산 배분 진단이 내려졌습니다. 전력 및 그린 그리드 인프라, 반도체 가치사슬, 로봇 구동 신기술 중심의 성장 포트폴리오와 가용 예수금의 최적 조합 배분을 전술대로 이행하십시오.`
@@ -2610,8 +2625,8 @@ export default function App() {
                   <div key={idx} className="border border-zinc-200 p-3.5 rounded-xl bg-zinc-50 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[9px] font-mono font-bold text-zinc-400">SIGNAL 0{idx + 1}</span>
-                        <span className={`text-[8px] font-black px-2 py-0.5 rounded border ${severity.color}`}>
+                        <span className="text-xs font-mono font-bold text-zinc-400">SIGNAL 0{idx + 1}</span>
+                        <span className={`text-xs font-black px-2 py-0.5 rounded border ${severity.color}`}>
                           {severity.label}
                         </span>
                       </div>
@@ -2635,8 +2650,8 @@ export default function App() {
             >
               {/* Section Header */}
               <div className="border-b-2 border-zinc-950 pb-2 mb-6 flex justify-between items-end">
-                <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; PORTFOLIO LEDGER & PRESCRIPTIONS</span>
-                <span className="text-[9px] text-zinc-500 font-mono font-bold">PAGE 3</span>
+                <span className="text-xs text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; PORTFOLIO LEDGER & PRESCRIPTIONS</span>
+                <span className="text-xs text-zinc-500 font-mono font-bold">PAGE 3</span>
               </div>
 
           {/* Quantitative Asset Ledger Table (Only printed if isPortfolio and has holdings) */}
@@ -2647,7 +2662,7 @@ export default function App() {
               </h2>
               <table className="w-full text-left border-collapse border-2 border-zinc-950 text-xs">
                 <thead>
-                  <tr className="bg-zinc-100 border-b-2 border-zinc-950 text-[9px] text-zinc-900 font-black uppercase">
+                  <tr className="bg-zinc-100 border-b-2 border-zinc-950 text-xs text-zinc-900 font-black uppercase">
                     <th className="p-2 border border-zinc-300">종목명 (코드)</th>
                     <th className="p-2 border border-zinc-300 text-right">매입단가 / 현재가</th>
                     <th className="p-2 border border-zinc-300 text-right">보유수량 / 평가액</th>
@@ -2718,15 +2733,15 @@ export default function App() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded border border-zinc-300 bg-white">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded border border-zinc-300 bg-white">
                             {holding.marketPosition || '무릎'} 단계
                           </span>
-                          <span className="text-[9px] font-black px-2 py-0.5 rounded border border-indigo-200 bg-indigo-50 text-indigo-700">
+                          <span className="text-xs font-black px-2 py-0.5 rounded border border-indigo-200 bg-indigo-50 text-indigo-700">
                             {holding.actionOpinion || '추가매수'}
                           </span>
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-3 text-[10px]">
+                      <div className="grid grid-cols-3 gap-3 text-xs">
                         <div>
                           <span className="text-zinc-500 block">평가 손익 / 수익률</span>
                           <span className={`font-black ${(holding.profitLoss || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
@@ -2764,8 +2779,8 @@ export default function App() {
           >
             {/* Section Header */}
             <div className="border-b-2 border-zinc-950 pb-2 mb-6 flex justify-between items-end">
-              <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; FUTURE CATALYSTS & Q&A RECORDS</span>
-              <span className="text-[9px] text-zinc-500 font-mono font-bold">PAGE 4</span>
+              <span className="text-xs text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; FUTURE CATALYSTS & Q&A RECORDS</span>
+              <span className="text-xs text-zinc-500 font-mono font-bold">PAGE 4</span>
             </div>
 
           {/* Prospective Theme Catalysts & Market Forecast Section */}
@@ -2777,52 +2792,64 @@ export default function App() {
               <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">SUPER LEAD</span>
-                    <span className="text-[8px] text-zinc-500 font-mono">전력망 인프라</span>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">SUPER LEAD</span>
+                    <span className="text-xs text-zinc-500 font-mono">전력망 인프라</span>
                   </div>
-                  <h4 className="text-[11px] font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라</h4>
-                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                  <h4 className="text-xs font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라</h4>
+                  <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     생성형 AI 보급으로 빅테크의 전력 수요가 폭증하며 초고압 변압기와 송배전 구리 전선 공급 부족이 구조적 실적 급증을 이끄는 메가 테마입니다.
                   </p>
+                  <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-300 text-xs text-zinc-700 font-bold">
+                    🔍 대표 종목: <span className="text-zinc-950 font-black">대원전선(006340), LS에코에너지(319900), 효성중공업(298040)</span>
+                  </div>
                 </div>
               </div>
               
               <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700">GLOBAL PIVOT</span>
-                    <span className="text-[8px] text-zinc-500 font-mono">차세대 HBM</span>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700">GLOBAL PIVOT</span>
+                    <span className="text-xs text-zinc-500 font-mono">차세대 HBM</span>
                   </div>
-                  <h4 className="text-[11px] font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체</h4>
-                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                  <h4 className="text-xs font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체</h4>
+                  <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     클라우드 종속에서 벗어나 스마트 가전, 기기에 NPU 탑재 및 차세대 고속 메모리(HBM) 가치사슬이 시장의 핵심 자금을 장기적으로 흡수합니다.
                   </p>
+                  <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-300 text-xs text-zinc-700 font-bold">
+                    🔍 대표 종목: <span className="text-zinc-950 font-black">삼성전자(005930), SK하이닉스(000660), 한미반도체(042700)</span>
+                  </div>
                 </div>
               </div>
 
               <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-purple-300 bg-purple-50 text-purple-700">ROBOTICS ERA</span>
-                    <span className="text-[8px] text-zinc-500 font-mono">로보틱스</span>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-purple-300 bg-purple-50 text-purple-700">ROBOTICS ERA</span>
+                    <span className="text-xs text-zinc-500 font-mono">로보틱스</span>
                   </div>
-                  <h4 className="text-[11px] font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기</h4>
-                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                  <h4 className="text-xs font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기</h4>
+                  <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     제조업 무인화와 자율 비서 등의 상용화로 로봇 제조 비용의 35% 이상을 차지하는 감속 구동 부품 기술 국산화 공급사의 성장이 두드러집니다.
                   </p>
+                  <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-300 text-xs text-zinc-700 font-bold">
+                    🔍 대표 종목: <span className="text-zinc-950 font-black">이랜시스(413570), 레인보우로보틱스(277810), 에스피지(058610)</span>
+                  </div>
                 </div>
               </div>
 
               <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-cyan-300 bg-cyan-50 text-cyan-700">SPACE TECH</span>
-                    <span className="text-[8px] text-zinc-500 font-mono">우주항공</span>
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-cyan-300 bg-cyan-50 text-cyan-700">SPACE TECH</span>
+                    <span className="text-xs text-zinc-500 font-mono">우주항공</span>
                   </div>
-                  <h4 className="text-[11px] font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망</h4>
-                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                  <h4 className="text-xs font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망</h4>
+                  <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     우주항공청 개청과 초소형 위성 다각 발사 등 정책 수혜 및 스페이스X 저궤도 위성망 국내 진출 연계로 핵심 국산 기술 보유사의 실적 성장이 유력합니다.
                   </p>
+                  <div className="mt-2.5 pt-2 border-t border-dashed border-zinc-300 text-xs text-zinc-700 font-bold">
+                    🔍 대표 종목: <span className="text-zinc-950 font-black">AP위성(211270), 한화에어로스페이스(012450), 컨텍(451760)</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2838,14 +2865,14 @@ export default function App() {
                 {chatMessages.map((msg, idx) => (
                   <div key={idx} className="border-2 border-zinc-950 rounded-xl p-4 bg-zinc-50 flex flex-col gap-2 print-avoid-break">
                     <div className="flex items-center justify-between border-b border-zinc-200 pb-2 mb-1">
-                      <span className="text-[10px] font-black text-zinc-950">
+                      <span className="text-xs font-black text-zinc-950">
                         {msg.role === 'user' ? '👤 사용자 질문 (User Query)' : '🔬 AI 수석 애널리스트 답변 (Expert Opinion)'}
                       </span>
-                      <span className="text-[8px] text-zinc-500 font-mono font-bold">
+                      <span className="text-xs text-zinc-500 font-mono font-bold">
                         SEQUENCE #{idx + 1}
                       </span>
                     </div>
-                    <div className="text-[11px] leading-relaxed font-semibold text-zinc-800">
+                    <div className="text-xs leading-relaxed font-semibold text-zinc-800">
                       {msg.role === 'user' ? (
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                       ) : (
@@ -2861,11 +2888,17 @@ export default function App() {
           )}
 
           {/* Legal and Disclaimer Footer */}
-          <div className="border-t border-zinc-300 pt-4 mt-8 text-[9px] text-zinc-500 leading-normal text-center">
-            본 진단 리포트는 사용자가 입력한 계좌 이미지 데이터와 투자 성향 파라미터를 기초로 Vision Market AI 분석 모델에 의해 독립적으로 산출되었습니다.<br />
-            제시된 의견과 진단 점수는 통계적 모형 및 과거 시장 데이터를 추종한 인공지능 요약 정보이며, 미래의 투자 이익을 보장하거나 투자를 권유하는 보증이 아닙니다.<br />
-            최종적인 투자 결정 및 자산 배분 책임은 전적으로 투자자 본인에게 귀속됩니다.<br />
-            <span className="font-bold font-mono uppercase block mt-1 text-zinc-950">Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
+          <div className="border-t border-zinc-300 pt-4 mt-8 text-xs text-zinc-500 leading-normal text-center flex flex-col gap-1.5" style={{ fontSize: '9pt' }}>
+            <p>
+              본 진단 리포트는 사용자가 입력한 계좌 이미지 데이터와 투자 성향 파라미터를 기초로 Vision Market AI 분석 모델에 의해 독립적으로 산출되었습니다.
+            </p>
+            <p className="font-extrabold text-amber-700">
+              ⚠️ 알림: Gemini AI는 인공지능 분석 모델 특성상 실수가 있을 수 있으며 수치 인식 및 종목 처방에 오류가 포함될 수 있습니다. 본 리포트는 단순 참고 자료용이며 투자 결과에 대한 법적 책임은 사용자에게 있습니다.
+            </p>
+            <p>
+              제시된 의견과 진단 점수는 통계적 모형 및 과거 시장 데이터를 추종한 인공지능 요약 정보이며, 미래의 투자 이익을 보장하거나 투자를 권유하는 보증이 아닙니다. 최종적인 투자 결정 및 자산 배분 책임은 전적으로 투자자 본인에게 귀속됩니다.
+            </p>
+            <span className="font-bold font-mono uppercase block mt-1 text-zinc-950" style={{ fontSize: '9pt' }}>Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
           </div>
           </div>
         </div>
@@ -2928,7 +2961,7 @@ export default function App() {
               {/* Modal Body (Scrollable preview sheet) */}
               <div className="p-4 sm:p-6 bg-zinc-950/60 overflow-y-auto flex-1 flex justify-center subtle-scrollbar">
                 {/* Simulated A4 Paper Sheet (Fluid width with absolute max-width to look like an elegant document) */}
-                <div className="w-full max-w-4xl bg-white text-zinc-900 p-6 sm:p-10 font-sans border-2 border-zinc-950 shadow-2xl rounded-2xl my-4 text-left">
+                <div id="pdf-preview-sheet" className="w-full max-w-4xl bg-white text-zinc-900 p-6 sm:p-10 font-sans border-2 border-zinc-950 shadow-2xl rounded-2xl my-4 text-left">
                   {/* Cover Header */}
                   <div className="border-b-4 border-zinc-950 pb-4 mb-6 flex justify-between items-end">
                     <div>
@@ -3327,6 +3360,9 @@ export default function App() {
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             생성형 AI 보급으로 빅테크의 전력 수요가 폭증하며 초고압 변압기와 송배전 구리 전선 공급 부족이 구조적 실적 급증을 이끄는 메가 테마입니다.
                           </p>
+                          <div className="mt-2 pt-2 border-t border-dashed border-zinc-300 text-[10px] text-zinc-700 font-bold">
+                            🔍 대표 종목: <span className="text-zinc-950 font-black">대원전선(006340), LS에코에너지(319900), 효성중공업(298040)</span>
+                          </div>
                         </div>
                       </div>
                       
@@ -3340,6 +3376,9 @@ export default function App() {
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             클라우드 종속에서 벗어나 스마트 가전, 기기에 NPU 탑재 및 차세대 고속 메모리(HBM) 가치사슬이 시장의 핵심 자금을 장기적으로 흡수합니다.
                           </p>
+                          <div className="mt-2 pt-2 border-t border-dashed border-zinc-300 text-[10px] text-zinc-700 font-bold">
+                            🔍 대표 종목: <span className="text-zinc-950 font-black">삼성전자(005930), SK하이닉스(000660), 한미반도체(042700)</span>
+                          </div>
                         </div>
                       </div>
 
@@ -3353,6 +3392,9 @@ export default function App() {
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             제조업 무인화와 자율 비서 등의 상용화로 로봇 제조 비용의 35% 이상을 차지하는 감속 구동 부품 기술 국산화 공급사의 성장이 두드러집니다.
                           </p>
+                          <div className="mt-2 pt-2 border-t border-dashed border-zinc-300 text-[10px] text-zinc-700 font-bold">
+                            🔍 대표 종목: <span className="text-zinc-950 font-black">이랜시스(413570), 레인보우로보틱스(277810), 에스피지(058610)</span>
+                          </div>
                         </div>
                       </div>
 
@@ -3366,6 +3408,9 @@ export default function App() {
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             우주항공청 개청과 초소형 위성 다각 발사 등 정책 수혜 및 스페이스X 저궤도 위성망 국내 진출 연계로 핵심 국산 기술 보유사의 실적 성장이 유력합니다.
                           </p>
+                          <div className="mt-2 pt-2 border-t border-dashed border-zinc-300 text-[10px] text-zinc-700 font-bold">
+                            🔍 대표 종목: <span className="text-zinc-950 font-black">AP위성(211270), 한화에어로스페이스(012450), 컨텍(451760)</span>
+                          </div>
                         </div>
                       </div>
                     </div>
