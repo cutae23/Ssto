@@ -397,6 +397,27 @@ export default function App() {
     return result;
   };
 
+  // Convert oklch to rgb using browser canvas API for 100% accurate standard color resolution
+  const oklchToRgb = (colorStr: string): string => {
+    if (!colorStr || !colorStr.includes('oklch')) return colorStr;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return colorStr;
+      ctx.fillStyle = colorStr;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+      if (colorStr.includes('/') || a < 255) {
+        return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
+      }
+      return `rgb(${r}, ${g}, ${b})`;
+    } catch (e) {
+      return colorStr;
+    }
+  };
+
   // Helper to temporarily convert oklch colors to rgb across style blocks and stylesheets
   const fixOklchInStyleSheets = async (): Promise<() => void> => {
     const oklchCache = new Map<string, string>();
@@ -404,12 +425,7 @@ export default function App() {
       if (oklchCache.has(colorStr)) {
         return oklchCache.get(colorStr)!;
       }
-      const temp = document.createElement('div');
-      temp.style.color = colorStr;
-      document.body.appendChild(temp);
-      const resolved = getComputedStyle(temp).color;
-      document.body.removeChild(temp);
-      const result = resolved || colorStr;
+      const result = oklchToRgb(colorStr);
       oklchCache.set(colorStr, result);
       return result;
     };
@@ -585,8 +601,37 @@ export default function App() {
     };
 
     let restoreOklch: (() => void) | null = null;
+    const originalGetComputedStyle = window.getComputedStyle;
+
     try {
-      // Temporarily parse and convert OKLCH color definitions to standard RGB to prevent html2canvas parsing crashes
+      // Patch window.getComputedStyle to intercept oklch and return rgb/rgba dynamically for html2canvas
+      window.getComputedStyle = function (elt, pseudoElt) {
+        const style = originalGetComputedStyle(elt, pseudoElt);
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') {
+              return function(propertyName: string) {
+                const val = target.getPropertyValue(propertyName);
+                if (typeof val === 'string' && val.includes('oklch')) {
+                  return oklchToRgb(val);
+                }
+                return val;
+              };
+            }
+            
+            const val = target[prop as any];
+            if (typeof val === 'string' && val.includes('oklch')) {
+              return oklchToRgb(val);
+            }
+            if (typeof val === 'function') {
+              return (val as any).bind(target);
+            }
+            return val;
+          }
+        }) as any;
+      };
+
+      // Temporarily parse and convert OKLCH color definitions to standard RGB in stylesheets
       restoreOklch = await fixOklchInStyleSheets();
 
       // Scales to try: starting high/optimal down to safe, low-memory fallbacks
@@ -607,8 +652,19 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('PDF export failed:', err);
-      alert(err.message || 'PDF 파일 생성 중 오류가 발생했습니다. 기기의 메모리가 부족하거나 리포트 내용이 너무 길어 처리할 수 없습니다. 화면의 리포트 미리보기(Modal) 기능을 참고해 주세요.');
+      
+      const usePrintFallback = confirm(
+        '고해상도 자동 PDF 다운로드 중 시스템 지연이나 오차가 발생했습니다. (Plan B) 브라우저 자체 인쇄/PDF 저장 기능을 사용하여 정상 출력하시겠습니까?\n\n[확인]을 누르면 깔끔한 인쇄 미리보기 화면이 즉시 가동되며, 대상(Printer) 설정을 [PDF로 저장]으로 선택하시면 고해상도 벡터 PDF 파일로 즉시 스마트폰/PC에 완벽히 저장됩니다.'
+      );
+      if (usePrintFallback) {
+        setTimeout(() => {
+          window.print();
+        }, 300);
+      }
     } finally {
+      // Restore window.getComputedStyle
+      window.getComputedStyle = originalGetComputedStyle;
+
       if (restoreOklch) {
         try {
           restoreOklch();
@@ -2812,30 +2868,44 @@ export default function App() {
               className="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-5xl shadow-2xl flex flex-col my-8 max-h-[90vh]"
             >
               {/* Modal Header */}
-              <div className="px-6 py-4 border-b border-zinc-850 flex items-center justify-between bg-zinc-900 rounded-t-3xl sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg flex items-center justify-center">
+              <div className="px-4 sm:px-6 py-3.5 border-b border-zinc-850 flex items-center justify-between gap-2 bg-zinc-900 rounded-t-3xl sticky top-0 z-10">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="h-8 w-8 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-lg flex-shrink-0 flex items-center justify-center">
                     <Eye className="h-4.5 w-4.5" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-white">진단 보고서 미리보기 (PDF Preview)</h3>
-                    <p className="text-[10px] text-zinc-400 font-medium">실제 다운로드될 PDF와 동일한 레이아웃과 서식입니다.</p>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-black text-white truncate">진단 보고서 미리보기 (PDF Preview)</h3>
+                    <p className="text-[9px] sm:text-[10px] text-zinc-400 font-medium truncate">실제 다운로드될 PDF와 동일한 서식입니다.</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      const confirmPrint = confirm(
+                        '브라우저 인쇄 기능을 사용하여 고해상도 PDF 장표로 즉시 인쇄/저장합니다. (모바일 및 전 기기 100% 호환)\n\n인쇄창의 대상(Printer) 설정을 [PDF로 저장] 또는 [Save as PDF]로 선택하시면 고화질 벡터 PDF 파일로 스마트폰/PC에 깔끔하게 저장됩니다.'
+                      );
+                      if (confirmPrint) {
+                        window.print();
+                      }
+                    }}
+                    className="flex items-center justify-center gap-1 text-[10px] sm:text-xs font-black px-2.5 sm:px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-750 text-white border border-zinc-700 transition-all cursor-pointer shadow-md active:scale-95"
+                  >
+                    <Printer className="h-3.5 w-3.5 text-zinc-400" />
+                    <span>Plan B (인쇄/저장)</span>
+                  </button>
                   <button
                     onClick={handleSavePdf}
                     disabled={isSavingPdf}
-                    className="flex items-center justify-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 transition-all cursor-pointer shadow-md disabled:opacity-50 active:scale-95"
+                    className="flex items-center justify-center gap-1 text-[10px] sm:text-xs font-black px-2.5 sm:px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 transition-all cursor-pointer shadow-md disabled:opacity-50 active:scale-95"
                   >
-                    <Printer className={`h-4 w-4 ${isSavingPdf ? 'animate-spin' : ''}`} />
-                    <span>{isSavingPdf ? 'PDF 생성 중...' : 'PDF 다운로드'}</span>
+                    <Printer className={`h-3.5 w-3.5 ${isSavingPdf ? 'animate-spin' : ''}`} />
+                    <span>{isSavingPdf ? '생성 중...' : '다운로드'}</span>
                   </button>
                   <button
                     onClick={() => setIsPdfPreviewOpen(false)}
-                    className="h-9 w-9 flex items-center justify-center rounded-xl bg-zinc-800 hover:bg-zinc-750 text-zinc-400 hover:text-white transition-all cursor-pointer"
+                    className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 flex items-center justify-center rounded-xl bg-zinc-800 hover:bg-zinc-750 text-zinc-400 hover:text-white transition-all cursor-pointer"
                   >
-                    <X className="h-4.5 w-4.5" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -3335,6 +3405,20 @@ export default function App() {
                   className="px-4 py-2 bg-zinc-800 hover:bg-zinc-750 text-zinc-300 text-xs font-bold rounded-xl transition-all cursor-pointer active:scale-95"
                 >
                   닫기
+                </button>
+                <button
+                  onClick={() => {
+                    const confirmPrint = confirm(
+                      '브라우저 인쇄 기능을 사용하여 고해상도 PDF 장표로 즉시 인쇄/저장합니다. (모바일 및 전 기기 100% 호환)\n\n인쇄창의 대상(Printer) 설정을 [PDF로 저장] 또는 [Save as PDF]로 선택하시면 고화질 벡터 PDF 파일로 스마트폰/PC에 깔끔하게 저장됩니다.'
+                    );
+                    if (confirmPrint) {
+                      window.print();
+                    }
+                  }}
+                  className="flex items-center justify-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-750 text-white border border-zinc-700 transition-all cursor-pointer shadow-md active:scale-95"
+                >
+                  <Printer className="h-4 w-4 text-zinc-400" />
+                  <span>Plan B (직접 인쇄/저장)</span>
                 </button>
                 <button
                   onClick={handleSavePdf}

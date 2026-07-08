@@ -69,6 +69,35 @@
 }
 
 @media print {
+  /* Hide all main application layout elements and overlays */
+  header, main, footer, .fixed, .absolute, [role="dialog"] {
+    display: none !important;
+  }
+  
+  /* Reset body and html context for standard printing */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Force display of the PDF wrapper, overriding its off-screen/fixed/hidden styles */
+  #pdf-template-wrapper {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    z-index: 9999999 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    background: #ffffff !important;
+  }
+
   .pdf-capture-container {
     position: static !important;
     width: 100% !important;
@@ -77,6 +106,12 @@
     opacity: 1 !important;
     overflow: visible !important;
     display: block !important;
+  }
+
+  /* Enable high-fidelity background and chart colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 
