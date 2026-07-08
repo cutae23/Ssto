@@ -14,16 +14,13 @@ import {
   Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CaptureAnalysisResult, UserProfile } from '../types';
+import { CaptureAnalysisResult, UserProfile, ChatMessage } from '../types';
 
 interface AiChatPanelProps {
   portfolio: CaptureAnalysisResult | null;
   profile: UserProfile;
-}
-
-interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 }
 
 // Lightweight Custom Markdown Renderer for a polished look without extra dependencies
@@ -104,8 +101,7 @@ const parseInlineMarkdown = (line: string): React.ReactNode[] => {
   return parts;
 };
 
-export default function AiChatPanel({ portfolio, profile }: AiChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function AiChatPanel({ portfolio, profile, messages, setMessages }: AiChatPanelProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

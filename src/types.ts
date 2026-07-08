@@ -147,3 +147,9 @@ export interface CaptureAnalysisResult {
   portfolioSummary?: PortfolioSummary; // 포트폴리오 요약 정보
   portfolioHoldings?: PortfolioHolding[]; // 개별 보유 종목 목록
 }
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+}
+

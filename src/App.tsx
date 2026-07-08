@@ -28,7 +28,7 @@ import {
   Printer,
   Eye
 } from 'lucide-react';
-import { UserProfile, CaptureAnalysisResult, PortfolioHolding, PortfolioSummary } from './types';
+import { UserProfile, CaptureAnalysisResult, PortfolioHolding, PortfolioSummary, ChatMessage } from './types';
 import AiChatPanel from './components/AiChatPanel';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -277,6 +277,82 @@ const SAMPLE_ANALYSIS_RESULT: CaptureAnalysisResult = {
   portfolioHoldings: SAMPLE_PORTFOLIO_HOLDINGS
 };
 
+const parseInlinePdfMarkdown = (line: string): React.ReactNode[] => {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\*\*.*?\*\*|`.*?`)/g;
+  const segments = line.split(regex);
+
+  segments.forEach((segment, sIdx) => {
+    if (segment.startsWith('**') && segment.endsWith('**')) {
+      parts.push(
+        <strong key={sIdx} className="font-extrabold text-zinc-950">
+          {segment.substring(2, segment.length - 2)}
+        </strong>
+      );
+    } else if (segment.startsWith('`') && segment.endsWith('`')) {
+      parts.push(
+        <code key={sIdx} className="bg-zinc-200 border border-zinc-300 px-1 rounded font-mono text-[10px] text-zinc-900 font-bold mx-0.5">
+          {segment.substring(1, segment.length - 1)}
+        </code>
+      );
+    } else {
+      parts.push(<span key={sIdx}>{segment}</span>);
+    }
+  });
+
+  return parts;
+};
+
+const renderPdfMarkdown = (text: string) => {
+  const lines = text.split('\n');
+  return lines.map((line, idx) => {
+    // Bullets
+    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+      const cleanLine = line.trim().substring(2);
+      return (
+        <li key={idx} className="ml-4 list-disc text-zinc-850 text-[11px] my-1 font-semibold leading-relaxed">
+          {parseInlinePdfMarkdown(cleanLine)}
+        </li>
+      );
+    }
+    // Numbered
+    const numRegex = /^(\d+)\.\s(.*)/;
+    const numMatch = line.trim().match(numRegex);
+    if (numMatch) {
+      return (
+        <li key={idx} className="ml-4 list-decimal text-zinc-850 text-[11px] my-1 font-semibold leading-relaxed">
+          {parseInlinePdfMarkdown(numMatch[2])}
+        </li>
+      );
+    }
+    // Headers
+    if (line.trim().startsWith('### ')) {
+      return (
+        <h5 key={idx} className="text-[11px] font-black text-zinc-950 uppercase tracking-wider mt-3 mb-1.5">
+          {parseInlinePdfMarkdown(line.trim().substring(4))}
+        </h5>
+      );
+    }
+    if (line.trim().startsWith('## ')) {
+      return (
+        <h4 key={idx} className="text-xs font-black text-zinc-950 uppercase tracking-tight mt-4 mb-2 border-b border-zinc-200 pb-0.5">
+          {parseInlinePdfMarkdown(line.trim().substring(3))}
+        </h4>
+      );
+    }
+    // Spacing
+    if (line.trim() === '') {
+      return <div key={idx} className="h-1.5" />;
+    }
+    // Normal paragraph
+    return (
+      <p key={idx} className="text-zinc-800 text-[11px] font-semibold leading-relaxed my-1">
+        {parseInlinePdfMarkdown(line)}
+      </p>
+    );
+  });
+};
+
 export default function App() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
@@ -289,63 +365,86 @@ export default function App() {
   const [activeResultTab, setActiveResultTab] = useState<'comprehensive' | 'individual' | 'sectorAnalysis' | 'aiChat'>('comprehensive');
   const [isSavingPdf, setIsSavingPdf] = useState<boolean>(false);
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState<boolean>(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const handleSavePdf = async () => {
     if (!analysisResult) return;
     setIsSavingPdf(true);
-    try {
-      const element = document.getElementById('pdf-report-template');
-      if (!element) {
-        throw new Error('PDF report element not found');
-      }
+    
+    // Check if mobile device to optimize canvas scale and prevent memory limits
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    
+    const tryRenderPdf = async (currentScale: number): Promise<boolean> => {
+      try {
+        const element = document.getElementById('pdf-report-template');
+        if (!element) {
+          throw new Error('PDF report element not found');
+        }
 
-      // Check if mobile device to optimize canvas scale and prevent memory limits
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-      const scale = isMobile ? 1.2 : 1.8;
+        // html2canvas config for high-quality, sharp text render
+        const canvas = await html2canvas(element, {
+          scale: currentScale,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          allowTaint: false, // Must be false to keep canvas untainted
+          width: 820,         // Force exact width of the template to be captured
+          windowWidth: 820,   // Force layout calculation at exactly 820px width
+        });
 
-      // html2canvas config for high-quality, sharp text render
-      const canvas = await html2canvas(element, {
-        scale: scale,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        allowTaint: true,
-        width: 820,         // Force exact width of the template to be captured
-        windowWidth: 820,   // Force layout calculation at exactly 820px width
-      });
+        const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG is more memory-friendly than PNG
+        if (!imgData || imgData === 'data:,') {
+          throw new Error('Failed to generate canvas image data (possibly due to memory limits)');
+        }
 
-      const imgData = canvas.toDataURL('image/png');
-      if (!imgData || imgData === 'data:,') {
-        throw new Error('Failed to generate canvas image data (possibly due to memory limits)');
-      }
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgWidth = 210; // A4 standard width in mm
+        const pageHeight = 297; // A4 standard height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
 
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const imgWidth = 210; // A4 standard width in mm
-      const pageHeight = 297; // A4 standard height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // Draw the first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= pageHeight;
-
-      // Render subsequent pages if content overflows A4 height
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        // Draw the first page
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
         heightLeft -= pageHeight;
-      }
 
-      const tickerName = analysisResult.targetTicker || 'Asset';
-      const safeTickerName = tickerName.replace(/[^a-zA-Z0-9가-힣]/g, '_');
-      pdf.save(`VisionMarketAI_Report_${safeTickerName}.pdf`);
-    } catch (err) {
+        // Render subsequent pages if content overflows A4 height
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+          heightLeft -= pageHeight;
+        }
+
+        const tickerName = analysisResult.targetTicker || 'Asset';
+        const safeTickerName = tickerName.replace(/[^a-zA-Z0-9가-힣_]/g, '_');
+        pdf.save(`VisionMarketAI_Report_${safeTickerName}.pdf`);
+        return true;
+      } catch (err) {
+        console.warn(`Render attempt failed with scale ${currentScale}:`, err);
+        return false;
+      }
+    };
+
+    try {
+      // First Attempt: Optimal Scale
+      const optimalScale = isMobile ? 1.0 : 1.5;
+      let success = await tryRenderPdf(optimalScale);
+      
+      // Second Attempt: Fail-safe Memory-efficient Scale
+      if (!success) {
+        console.log('Retrying with safe low-memory scale...');
+        const fallbackScale = isMobile ? 0.8 : 1.0;
+        success = await tryRenderPdf(fallbackScale);
+      }
+      
+      if (!success) {
+        throw new Error('All PDF generation attempts failed. This can happen on low-end devices due to canvas size or memory restrictions.');
+      }
+    } catch (err: any) {
       console.error('PDF export failed:', err);
-      alert('PDF 파일 생성 중 오류가 발생했습니다. 모바일 브라우저의 메모리 제한 때문일 수 있습니다. 화면의 리포트 미리보기 기능을 이용하시거나, 가로 화면(데스크톱 모드)으로 변경 후 다시 시도해 주세요.');
+      alert(err.message || 'PDF 파일 생성 중 오류가 발생했습니다. 기기의 메모리가 부족하거나 리포트 내용이 너무 길어 처리할 수 없습니다. 화면의 리포트 미리보기(Modal) 기능을 참고해 주세요.');
     } finally {
       setIsSavingPdf(false);
     }
@@ -922,7 +1021,7 @@ export default function App() {
                     </div>
                   </motion.div>
 
-                  <AiChatPanel portfolio={null} profile={profile} />
+                  <AiChatPanel portfolio={null} profile={profile} messages={chatMessages} setMessages={setChatMessages} />
                 </div>
               )}
 
@@ -1764,7 +1863,7 @@ export default function App() {
 
               {activeResultTab === 'aiChat' && (
                 <div className="animate-fadeIn text-left">
-                  <AiChatPanel portfolio={analysisResult} profile={profile} />
+                  <AiChatPanel portfolio={analysisResult} profile={profile} messages={chatMessages} setMessages={setChatMessages} />
                 </div>
               )}
                 </motion.div>
@@ -1990,10 +2089,11 @@ export default function App() {
 
       {/* 5. Print-Only Beautiful PDF Report Template */}
       {analysisResult && (
-        <div 
-          id="pdf-report-template"
-          className="pdf-capture-container text-zinc-900 p-8 font-sans border-2 border-zinc-950"
-        >
+        <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '820px', overflow: 'hidden', height: 0 }}>
+          <div 
+            id="pdf-report-template"
+            className="pdf-capture-container text-zinc-900 p-8 font-sans border-2 border-zinc-950"
+          >
           {/* Cover Header */}
           <div className="border-b-4 border-zinc-950 pb-4 mb-6 flex justify-between items-end">
             <div>
@@ -2300,12 +2400,179 @@ export default function App() {
             </div>
           )}
 
+          {/* 1:1 Individual Stock Diagnostic Prescriptions (Detailed AI Opinions) */}
+          {analysisResult.isPortfolio && analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
+            <div className="mb-6 print-avoid-break">
+              <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+                🔬 개별 보유 종목 1:1 정밀 처방전 (Individual Stock Diagnostic Prescriptions)
+              </h2>
+              <div className="space-y-4">
+                {analysisResult.portfolioHoldings.map((holding, idx) => {
+                  const position = holding.marketPosition || '무릎';
+                  let score = 50;
+                  let text = '관망 및 대기 (추가 자금 투입 자제)';
+                  
+                  if (position === '발') {
+                    score = 95;
+                    text = '최고 수준 적극 매수 (현금 배분 1순위 권장)';
+                  } else if (position === '무릎') {
+                    score = 85;
+                    text = '매우 양호 (분할 평단가 하향 적극 추천)';
+                  } else if (position === '허리') {
+                    score = 50;
+                    text = '관망 보류 (기 보유 비중만 유지 권장)';
+                  } else if (position === '어깨') {
+                    score = 25;
+                    text = '비중 조절 요망 (추가 물타기 금지 및 매도 대응)';
+                  } else if (position === '머리') {
+                    score = 10;
+                    text = '경계 및 대피 (추가 매수 절대 불가, 비중 전량 탈출)';
+                  }
+
+                  return (
+                    <div key={idx} className="border-2 border-zinc-950 rounded-xl p-4 bg-zinc-50 flex flex-col gap-3 print-avoid-break">
+                      <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-zinc-950">
+                            {idx + 1}. {holding.name} {holding.ticker ? `(${holding.ticker})` : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded border border-zinc-300 bg-white">
+                            {holding.marketPosition || '무릎'} 단계
+                          </span>
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded border border-indigo-200 bg-indigo-50 text-indigo-700">
+                            {holding.actionOpinion || '추가매수'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-[10px]">
+                        <div>
+                          <span className="text-zinc-500 block">평가 손익 / 수익률</span>
+                          <span className={`font-black ${(holding.profitLoss || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {holding.profitLoss?.toLocaleString()}원 ({holding.returnPercent?.toFixed(2)}%)
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block">보유 수량 / 평가액</span>
+                          <span className="font-bold text-zinc-800">
+                            {holding.quantity?.toLocaleString()}주 / {holding.evaluationAmount?.toLocaleString()}원
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-500 block">물타기 매력도 점수</span>
+                          <span className="font-black text-zinc-900">{score}점 / 100점</span>
+                        </div>
+                      </div>
+                      <div className="bg-white border border-zinc-200 p-3 rounded-lg text-[11px] text-zinc-750 leading-relaxed font-semibold">
+                        <p>{holding.individualVerdict || '해당 종목의 AI 정밀 분석 의견이 없습니다.'}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Prospective Theme Catalysts & Market Forecast Section */}
+          <div className="mb-6 print-avoid-break">
+            <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+              🚀 미래 시장 주도 테마 및 AI 핵심 성장 동력 요약 (Market Catalyst Forecast)
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">SUPER LEAD</span>
+                    <span className="text-[8px] text-zinc-500 font-mono">전력망 인프라</span>
+                  </div>
+                  <h4 className="text-[11px] font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라</h4>
+                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                    생성형 AI 보급으로 빅테크의 전력 수요가 폭증하며 초고압 변압기와 송배전 구리 전선 공급 부족이 구조적 실적 급증을 이끄는 메가 테마입니다.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700">GLOBAL PIVOT</span>
+                    <span className="text-[8px] text-zinc-500 font-mono">차세대 HBM</span>
+                  </div>
+                  <h4 className="text-[11px] font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체</h4>
+                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                    클라우드 종속에서 벗어나 스마트 가전, 기기에 NPU 탑재 및 차세대 고속 메모리(HBM) 가치사슬이 시장의 핵심 자금을 장기적으로 흡수합니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-purple-300 bg-purple-50 text-purple-700">ROBOTICS ERA</span>
+                    <span className="text-[8px] text-zinc-500 font-mono">로보틱스</span>
+                  </div>
+                  <h4 className="text-[11px] font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기</h4>
+                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                    제조업 무인화와 자율 비서 등의 상용화로 로봇 제조 비용의 35% 이상을 차지하는 감속 구동 부품 기술 국산화 공급사의 성장이 두드러집니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between print-avoid-break">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-cyan-300 bg-cyan-50 text-cyan-700">SPACE TECH</span>
+                    <span className="text-[8px] text-zinc-500 font-mono">우주항공</span>
+                  </div>
+                  <h4 className="text-[11px] font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망</h4>
+                  <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                    우주항공청 개청과 초소형 위성 다각 발사 등 정책 수혜 및 스페이스X 저궤도 위성망 국내 진출 연계로 핵심 국산 기술 보유사의 실적 성장이 유력합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AI 1:1 수석 애널리스트 Q&A 세션 기록 (AI Chat Q&A Session Log) */}
+          {chatMessages && chatMessages.length > 0 && (
+            <div className="mb-6 print-avoid-break">
+              <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+                💬 AI 수석 애널리스트 1:1 라이브 질의회신 기록 (Live Q&A Session Log)
+              </h2>
+              <div className="space-y-4">
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className="border-2 border-zinc-950 rounded-xl p-4 bg-zinc-50 flex flex-col gap-2 print-avoid-break">
+                    <div className="flex items-center justify-between border-b border-zinc-200 pb-2 mb-1">
+                      <span className="text-[10px] font-black text-zinc-950">
+                        {msg.role === 'user' ? '👤 사용자 질문 (User Query)' : '🔬 AI 수석 애널리스트 답변 (Expert Opinion)'}
+                      </span>
+                      <span className="text-[8px] text-zinc-500 font-mono font-bold">
+                        SEQUENCE #{idx + 1}
+                      </span>
+                    </div>
+                    <div className="text-[11px] leading-relaxed font-semibold text-zinc-800">
+                      {msg.role === 'user' ? (
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {renderPdfMarkdown(msg.text)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Legal and Disclaimer Footer */}
           <div className="border-t border-zinc-300 pt-4 mt-8 text-[9px] text-zinc-500 leading-normal text-center">
             본 진단 리포트는 사용자가 입력한 계좌 이미지 데이터와 투자 성향 파라미터를 기초로 Vision Market AI 분석 모델에 의해 독립적으로 산출되었습니다.<br />
             제시된 의견과 진단 점수는 통계적 모형 및 과거 시장 데이터를 추종한 인공지능 요약 정보이며, 미래의 투자 이익을 보장하거나 투자를 권유하는 보증이 아닙니다.<br />
             최종적인 투자 결정 및 자산 배분 책임은 전적으로 투자자 본인에게 귀속됩니다.<br />
             <span className="font-bold font-mono uppercase block mt-1 text-zinc-950">Vision Market AI &copy; All Rights Reserved. Powered by Gemini.</span>
+          </div>
           </div>
         </div>
       )}
@@ -2658,6 +2925,172 @@ export default function App() {
                             ))}
                           </tbody>
                         </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 1:1 Individual Stock Diagnostic Prescriptions (Detailed AI Opinions) */}
+                  {analysisResult.isPortfolio && analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+                        🔬 개별 보유 종목 1:1 정밀 처방전 (Individual Stock Diagnostic Prescriptions)
+                      </h2>
+                      <div className="space-y-4">
+                        {analysisResult.portfolioHoldings.map((holding, idx) => {
+                          const position = holding.marketPosition || '무릎';
+                          let score = 50;
+                          let text = '관망 및 대기 (추가 자금 투입 자제)';
+                          
+                          if (position === '발') {
+                            score = 95;
+                            text = '최고 수준 적극 매수 (현금 배분 1순위 권장)';
+                          } else if (position === '무릎') {
+                            score = 85;
+                            text = '매우 양호 (분할 평단가 하향 적극 추천)';
+                          } else if (position === '허리') {
+                            score = 50;
+                            text = '관망 보류 (기 보유 비중만 유지 권장)';
+                          } else if (position === '어깨') {
+                            score = 25;
+                            text = '비중 조절 요망 (추가 물타기 금지 및 매도 대응)';
+                          } else if (position === '머리') {
+                            score = 10;
+                            text = '경계 및 대피 (추가 매수 절대 불가, 비중 전량 탈출)';
+                          }
+
+                          return (
+                            <div key={idx} className="border-2 border-zinc-950 rounded-xl p-4 bg-zinc-50 flex flex-col gap-3">
+                              <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black text-zinc-950">
+                                    {idx + 1}. {holding.name} {holding.ticker ? `(${holding.ticker})` : ''}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-bold px-2 py-0.5 rounded border border-zinc-300 bg-white">
+                                    {holding.marketPosition || '무릎'} 단계
+                                  </span>
+                                  <span className="text-[9px] font-black px-2 py-0.5 rounded border border-indigo-200 bg-indigo-50 text-indigo-700">
+                                    {holding.actionOpinion || '추가매수'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3 text-[10px]">
+                                <div>
+                                  <span className="text-zinc-500 block">평가 손익 / 수익률</span>
+                                  <span className={`font-black ${(holding.profitLoss || 0) >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                    {holding.profitLoss?.toLocaleString()}원 ({holding.returnPercent?.toFixed(2)}%)
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-zinc-500 block">보유 수량 / 평가액</span>
+                                  <span className="font-bold text-zinc-800">
+                                    {holding.quantity?.toLocaleString()}주 / {holding.evaluationAmount?.toLocaleString()}원
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-zinc-500 block">물타기 매력도 점수</span>
+                                  <span className="font-black text-zinc-900">{score}점 / 100점</span>
+                                </div>
+                              </div>
+                              <div className="bg-white border border-zinc-200 p-3 rounded-lg text-[11px] text-zinc-750 leading-relaxed font-semibold">
+                                <p>{holding.individualVerdict || '해당 종목의 AI 정밀 분석 의견이 없습니다.'}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Prospective Theme Catalysts & Market Forecast Section */}
+                  <div className="mb-6">
+                    <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+                      🚀 미래 시장 주도 테마 및 AI 핵심 성장 동력 요약 (Market Catalyst Forecast)
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">SUPER LEAD</span>
+                            <span className="text-[8px] text-zinc-500 font-mono">전력망 인프라</span>
+                          </div>
+                          <h4 className="text-[11px] font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라</h4>
+                          <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                            생성형 AI 보급으로 빅테크의 전력 수요가 폭증하며 초고압 변압기와 송배전 구리 전선 공급 부족이 구조적 실적 급증을 이끄는 메가 테마입니다.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700">GLOBAL PIVOT</span>
+                            <span className="text-[8px] text-zinc-500 font-mono">차세대 HBM</span>
+                          </div>
+                          <h4 className="text-[11px] font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체</h4>
+                          <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                            클라우드 종속에서 벗어나 스마트 가전, 기기에 NPU 탑재 및 차세대 고속 메모리(HBM) 가치사슬이 시장의 핵심 자금을 장기적으로 흡수합니다.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-purple-300 bg-purple-50 text-purple-700">ROBOTICS ERA</span>
+                            <span className="text-[8px] text-zinc-500 font-mono">로보틱스</span>
+                          </div>
+                          <h4 className="text-[11px] font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기</h4>
+                          <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                            제조업 무인화와 자율 비서 등의 상용화로 로봇 제조 비용의 35% 이상을 차지하는 감속 구동 부품 기술 국산화 공급사의 성장이 두드러집니다.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="border-2 border-zinc-950 rounded-xl p-3.5 bg-zinc-50 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-cyan-300 bg-cyan-50 text-cyan-700">SPACE TECH</span>
+                            <span className="text-[8px] text-zinc-500 font-mono">우주항공</span>
+                          </div>
+                          <h4 className="text-[11px] font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망</h4>
+                          <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
+                            우주항공청 개청과 초소형 위성 다각 발사 등 정책 수혜 및 스페이스X 저궤도 위성망 국내 진출 연계로 핵심 국산 기술 보유사의 실적 성장이 유력합니다.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI 1:1 수석 애널리스트 Q&A 세션 기록 (AI Chat Q&A Session Log) */}
+                  {chatMessages && chatMessages.length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="text-xs font-black text-zinc-950 uppercase tracking-wider border-b-2 border-zinc-950 pb-2 mb-4">
+                        💬 AI 수석 애널리스트 1:1 라이브 질의회신 기록 (Live Q&A Session Log)
+                      </h2>
+                      <div className="space-y-4 text-left">
+                        {chatMessages.map((msg, idx) => (
+                          <div key={idx} className="border-2 border-zinc-950 rounded-xl p-4 bg-zinc-50 flex flex-col gap-2">
+                            <div className="flex items-center justify-between border-b border-zinc-200 pb-2 mb-1">
+                              <span className="text-[10px] font-black text-zinc-950">
+                                {msg.role === 'user' ? '👤 사용자 질문 (User Query)' : '🔬 AI 수석 애널리스트 답변 (Expert Opinion)'}
+                              </span>
+                              <span className="text-[8px] text-zinc-500 font-mono font-bold">
+                                SEQUENCE #{idx + 1}
+                              </span>
+                            </div>
+                            <div className="text-[11px] leading-relaxed font-semibold text-zinc-800">
+                              {msg.role === 'user' ? (
+                                <p className="whitespace-pre-wrap">{msg.text}</p>
+                              ) : (
+                                <div className="space-y-1">
+                                  {renderPdfMarkdown(msg.text)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
