@@ -376,45 +376,59 @@ export default function App() {
     
     const tryRenderPdf = async (currentScale: number): Promise<boolean> => {
       try {
-        const element = document.getElementById('pdf-report-template');
-        if (!element) {
-          throw new Error('PDF report element not found');
-        }
+        const pageIds = ['pdf-page-1', 'pdf-page-2', 'pdf-page-3', 'pdf-page-4'];
+        const existingPages = pageIds.filter(id => document.getElementById(id));
 
-        // html2canvas config for high-quality, sharp text render
-        const canvas = await html2canvas(element, {
-          scale: currentScale,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          allowTaint: false, // Must be false to keep canvas untainted
-          width: 820,         // Force exact width of the template to be captured
-          windowWidth: 820,   // Force layout calculation at exactly 820px width
-        });
-
-        const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG is more memory-friendly than PNG
-        if (!imgData || imgData === 'data:,') {
-          throw new Error('Failed to generate canvas image data (possibly due to memory limits)');
+        if (existingPages.length === 0) {
+          throw new Error('PDF report pages not found');
         }
 
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgWidth = 210; // A4 standard width in mm
         const pageHeight = 297; // A4 standard height in mm
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        let heightLeft = imgHeight;
-        let position = 0;
+        let pageCount = 0;
 
-        // Draw the first page
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
+        for (let i = 0; i < existingPages.length; i++) {
+          const element = document.getElementById(existingPages[i]);
+          if (!element) continue;
 
-        // Render subsequent pages if content overflows A4 height
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
+          // html2canvas config for high-quality, sharp text render
+          const canvas = await html2canvas(element, {
+            scale: currentScale,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            allowTaint: false, // Must be false to keep canvas untainted
+            width: 820,         // Force exact width of the template to be captured
+            windowWidth: 820,   // Force layout calculation at exactly 820px width
+          });
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG is more memory-friendly than PNG
+          if (!imgData || imgData === 'data:,') {
+            throw new Error(`Failed to generate canvas image data for page ${existingPages[i]}`);
+          }
+
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+          let position = 0;
+
+          if (pageCount > 0) {
+            pdf.addPage();
+          }
+          pageCount++;
+
+          // Draw the first page of this section
           pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
           heightLeft -= pageHeight;
+
+          // Render subsequent pages if content overflows A4 height
+          while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pageCount++;
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+            heightLeft -= pageHeight;
+          }
         }
 
         const tickerName = analysisResult.targetTicker || 'Asset';
@@ -2089,10 +2103,11 @@ export default function App() {
 
       {/* 5. Print-Only Beautiful PDF Report Template */}
       {analysisResult && (
-        <div style={{ position: 'absolute', left: '-9999px', top: '0px', width: '820px' }}>
+        <div style={{ position: 'fixed', left: '0px', top: '0px', width: '820px', zIndex: -9999, opacity: 0.01, pointerEvents: 'none' }}>
           <div 
-            id="pdf-report-template"
-            className="pdf-capture-container text-zinc-900 p-8 font-sans border-2 border-zinc-950"
+            id="pdf-page-1"
+            className="text-zinc-900 p-8 font-sans border-2 border-zinc-950 bg-white mb-6"
+            style={{ width: '820px' }}
           >
           {/* Cover Header */}
           <div className="border-b-4 border-zinc-950 pb-4 mb-6 flex justify-between items-end">
@@ -2226,6 +2241,19 @@ export default function App() {
               </p>
             </div>
           </div>
+          </div>
+
+          {/* Page 2 */}
+          <div 
+            id="pdf-page-2"
+            className="text-zinc-900 p-8 font-sans border-2 border-zinc-950 bg-white mb-6"
+            style={{ width: '820px' }}
+          >
+            {/* Section Header */}
+            <div className="border-b-2 border-zinc-950 pb-2 mb-6 flex justify-between items-end">
+              <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; MACRO & ALLOCATION ANALYSIS</span>
+              <span className="text-[9px] text-zinc-500 font-mono font-bold">PAGE 2</span>
+            </div>
 
           {/* Macro & Technical Briefing Card */}
           <div className="border-2 border-zinc-950 rounded-2xl p-5 bg-white mb-6">
@@ -2358,6 +2386,20 @@ export default function App() {
               })}
             </div>
           </div>
+          </div>
+
+          {/* Page 3: Quantitative Asset Ledger & Prescriptions (Only rendered for portfolio) */}
+          {analysisResult.isPortfolio && (
+            <div 
+              id="pdf-page-3"
+              className="text-zinc-900 p-8 font-sans border-2 border-zinc-950 bg-white mb-6"
+              style={{ width: '820px' }}
+            >
+              {/* Section Header */}
+              <div className="border-b-2 border-zinc-950 pb-2 mb-6 flex justify-between items-end">
+                <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; PORTFOLIO LEDGER & PRESCRIPTIONS</span>
+                <span className="text-[9px] text-zinc-500 font-mono font-bold">PAGE 3</span>
+              </div>
 
           {/* Quantitative Asset Ledger Table (Only printed if isPortfolio and has holdings) */}
           {analysisResult.isPortfolio && analysisResult.portfolioHoldings && analysisResult.portfolioHoldings.length > 0 && (
@@ -2473,6 +2515,20 @@ export default function App() {
               </div>
             </div>
           )}
+          </div>
+          )}
+
+          {/* Page 4 */}
+          <div 
+            id="pdf-page-4"
+            className="text-zinc-900 p-8 font-sans border-2 border-zinc-950 bg-white mb-6"
+            style={{ width: '820px' }}
+          >
+            {/* Section Header */}
+            <div className="border-b-2 border-zinc-950 pb-2 mb-6 flex justify-between items-end">
+              <span className="text-[10px] text-zinc-900 font-mono font-black uppercase tracking-widest block">VISION MARKET AI &middot; FUTURE CATALYSTS & Q&A RECORDS</span>
+              <span className="text-[9px] text-zinc-500 font-mono font-bold">PAGE 4</span>
+            </div>
 
           {/* Prospective Theme Catalysts & Market Forecast Section */}
           <div className="mb-6 print-avoid-break">
