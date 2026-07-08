@@ -2795,7 +2795,7 @@ export default function App() {
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">SUPER LEAD</span>
                     <span className="text-xs text-zinc-500 font-mono">전력망 인프라</span>
                   </div>
-                  <h4 className="text-xs font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라</h4>
+                  <h4 className="text-xs font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라 : 대원전선, LS에코에너지, 효성중공업</h4>
                   <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     생성형 AI 보급으로 빅테크의 전력 수요가 폭증하며 초고압 변압기와 송배전 구리 전선 공급 부족이 구조적 실적 급증을 이끄는 메가 테마입니다.
                   </p>
@@ -2811,7 +2811,7 @@ export default function App() {
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700">GLOBAL PIVOT</span>
                     <span className="text-xs text-zinc-500 font-mono">차세대 HBM</span>
                   </div>
-                  <h4 className="text-xs font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체</h4>
+                  <h4 className="text-xs font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체 : 삼성전자, SK하이닉스, 한미반도체</h4>
                   <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     클라우드 종속에서 벗어나 스마트 가전, 기기에 NPU 탑재 및 차세대 고속 메모리(HBM) 가치사슬이 시장의 핵심 자금을 장기적으로 흡수합니다.
                   </p>
@@ -2827,7 +2827,7 @@ export default function App() {
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-purple-300 bg-purple-50 text-purple-700">ROBOTICS ERA</span>
                     <span className="text-xs text-zinc-500 font-mono">로보틱스</span>
                   </div>
-                  <h4 className="text-xs font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기</h4>
+                  <h4 className="text-xs font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기 : 이랜시스, 레인보우로보틱스, 에스피지</h4>
                   <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     제조업 무인화와 자율 비서 등의 상용화로 로봇 제조 비용의 35% 이상을 차지하는 감속 구동 부품 기술 국산화 공급사의 성장이 두드러집니다.
                   </p>
@@ -2843,7 +2843,7 @@ export default function App() {
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded border border-cyan-300 bg-cyan-50 text-cyan-700">SPACE TECH</span>
                     <span className="text-xs text-zinc-500 font-mono">우주항공</span>
                   </div>
-                  <h4 className="text-xs font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망</h4>
+                  <h4 className="text-xs font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망 : AP위성, 한화에어로스페이스, 컨텍</h4>
                   <p className="text-xs text-zinc-700 leading-relaxed font-semibold mt-1">
                     우주항공청 개청과 초소형 위성 다각 발사 등 정책 수혜 및 스페이스X 저궤도 위성망 국내 진출 연계로 핵심 국산 기술 보유사의 실적 성장이 유력합니다.
                   </p>
@@ -3356,7 +3356,7 @@ export default function App() {
                             <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-amber-300 bg-amber-50 text-amber-700">SUPER LEAD</span>
                             <span className="text-[8px] text-zinc-500 font-mono">전력망 인프라</span>
                           </div>
-                          <h4 className="text-[11px] font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라</h4>
+                          <h4 className="text-[11px] font-black text-zinc-950">AI 데이터센터 전력망 및 전선 인프라 : 대원전선, LS에코에너지, 효성중공업</h4>
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             생성형 AI 보급으로 빅테크의 전력 수요가 폭증하며 초고압 변압기와 송배전 구리 전선 공급 부족이 구조적 실적 급증을 이끄는 메가 테마입니다.
                           </p>
@@ -3372,7 +3372,7 @@ export default function App() {
                             <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-indigo-300 bg-indigo-50 text-indigo-700">GLOBAL PIVOT</span>
                             <span className="text-[8px] text-zinc-500 font-mono">차세대 HBM</span>
                           </div>
-                          <h4 className="text-[11px] font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체</h4>
+                          <h4 className="text-[11px] font-black text-zinc-950">온디바이스 AI 및 차세대 HBM 반도체 : 삼성전자, SK하이닉스, 한미반도체</h4>
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             클라우드 종속에서 벗어나 스마트 가전, 기기에 NPU 탑재 및 차세대 고속 메모리(HBM) 가치사슬이 시장의 핵심 자금을 장기적으로 흡수합니다.
                           </p>
@@ -3388,7 +3388,7 @@ export default function App() {
                             <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-purple-300 bg-purple-50 text-purple-700">ROBOTICS ERA</span>
                             <span className="text-[8px] text-zinc-500 font-mono">로보틱스</span>
                           </div>
-                          <h4 className="text-[11px] font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기</h4>
+                          <h4 className="text-[11px] font-black text-zinc-950">지능형 휴머노이드 로봇 및 핵심 기어 감속기 : 이랜시스, 레인보우로보틱스, 에스피지</h4>
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             제조업 무인화와 자율 비서 등의 상용화로 로봇 제조 비용의 35% 이상을 차지하는 감속 구동 부품 기술 국산화 공급사의 성장이 두드러집니다.
                           </p>
@@ -3404,7 +3404,7 @@ export default function App() {
                             <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-cyan-300 bg-cyan-50 text-cyan-700">SPACE TECH</span>
                             <span className="text-[8px] text-zinc-500 font-mono">우주항공</span>
                           </div>
-                          <h4 className="text-[11px] font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망</h4>
+                          <h4 className="text-[11px] font-black text-zinc-950">범국가 민간 우주항공 및 저궤도 위성 통신망 : AP위성, 한화에어로스페이스, 컨텍</h4>
                           <p className="text-[10px] text-zinc-700 leading-relaxed font-semibold mt-1">
                             우주항공청 개청과 초소형 위성 다각 발사 등 정책 수혜 및 스페이스X 저궤도 위성망 국내 진출 연계로 핵심 국산 기술 보유사의 실적 성장이 유력합니다.
                           </p>

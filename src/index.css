@@ -39,7 +39,6 @@
   html, body {
     background-color: #ffffff !important;
     color: #09090b !important;
-    font-size: 11px !important;
   }
   
   .print-avoid-break {
@@ -122,75 +121,75 @@ HIGH-READABILITY DOUBLE TEXT SCALE FOR REPORTS (PDF & PREVIEW)
 */
 #pdf-template-wrapper,
 #pdf-preview-sheet {
-  font-size: 18px !important;
+  font-size: 20px !important;
 }
 
 #pdf-template-wrapper .text-[10px],
 #pdf-preview-sheet .text-[10px] {
-  font-size: 17px !important;
+  font-size: 19px !important;
 }
 
 #pdf-template-wrapper .text-[11px],
 #pdf-preview-sheet .text-[11px] {
-  font-size: 18px !important;
+  font-size: 21px !important;
 }
 
 #pdf-template-wrapper .text-[12px],
 #pdf-preview-sheet .text-[12px] {
-  font-size: 19px !important;
+  font-size: 22px !important;
 }
 
 #pdf-template-wrapper .text-xs,
 #pdf-preview-sheet .text-xs {
-  font-size: 19px !important;
+  font-size: 22px !important;
 }
 
 #pdf-template-wrapper .text-sm,
 #pdf-preview-sheet .text-sm {
-  font-size: 22px !important;
+  font-size: 26px !important;
 }
 
 #pdf-template-wrapper .text-base,
 #pdf-preview-sheet .text-base {
-  font-size: 26px !important;
+  font-size: 30px !important;
 }
 
 #pdf-template-wrapper .text-lg,
 #pdf-preview-sheet .text-lg {
-  font-size: 30px !important;
+  font-size: 36px !important;
 }
 
 #pdf-template-wrapper .text-xl,
 #pdf-preview-sheet .text-xl {
-  font-size: 34px !important;
+  font-size: 42px !important;
 }
 
 #pdf-template-wrapper .text-2xl,
 #pdf-preview-sheet .text-2xl {
-  font-size: 42px !important;
+  font-size: 50px !important;
 }
 
 #pdf-template-wrapper .text-3xl,
 #pdf-preview-sheet .text-3xl {
-  font-size: 54px !important;
+  font-size: 64px !important;
 }
 
 #pdf-template-wrapper .text-4xl,
 #pdf-preview-sheet .text-4xl {
-  font-size: 68px !important;
+  font-size: 80px !important;
 }
 
 /* Ensure all elements with style definitions using font-size are boosted as well */
 #pdf-template-wrapper [style*="font-size"],
 #pdf-preview-sheet [style*="font-size"] {
-  font-size: 18px !important;
+  font-size: 20px !important;
 }
 
 /* Specific scaling of icons to be perfectly balanced with larger text */
 #pdf-template-wrapper svg,
 #pdf-preview-sheet svg {
-  width: 22px !important;
-  height: 22px !important;
+  width: 26px !important;
+  height: 26px !important;
 }
 
 /* Custom alignment overrides to prevent layout crowding with larger font sizes */
@@ -198,15 +197,15 @@ HIGH-READABILITY DOUBLE TEXT SCALE FOR REPORTS (PDF & PREVIEW)
 #pdf-preview-sheet .h-8,
 #pdf-template-wrapper .w-8,
 #pdf-preview-sheet .w-8 {
-  width: 42px !important;
-  height: 42px !important;
-  font-size: 20px !important;
+  width: 50px !important;
+  height: 50px !important;
+  font-size: 24px !important;
 }
 
 /* Ensure the node labels do not wrap awkwardly */
 #pdf-template-wrapper .relative.z-10.flex.flex-col,
 #pdf-preview-sheet .relative.z-10.flex.flex-col {
-  min-width: 120px !important;
+  min-width: 140px !important;
 }
 
 
