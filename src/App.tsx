@@ -374,6 +374,26 @@ export default function App() {
     // Check if mobile device to optimize canvas scale and prevent memory limits
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
     
+    // Temporarily optimize styles of the wrapper so html2canvas renders it cleanly
+    const wrapper = document.getElementById('pdf-template-wrapper');
+    const originalStyle = wrapper ? {
+      position: wrapper.style.position,
+      left: wrapper.style.left,
+      top: wrapper.style.top,
+      zIndex: wrapper.style.zIndex,
+      opacity: wrapper.style.opacity,
+      pointerEvents: wrapper.style.pointerEvents
+    } : null;
+
+    if (wrapper) {
+      wrapper.style.position = 'absolute';
+      wrapper.style.left = '0px';
+      wrapper.style.top = '0px';
+      wrapper.style.zIndex = '-50'; // Place below the main opaque app UI (bg-zinc-950) so it's hidden to users but visible for painting
+      wrapper.style.opacity = '1';  // Keep full opacity so html2canvas captures clear colors and text
+      wrapper.style.pointerEvents = 'none';
+    }
+
     const tryRenderPdf = async (currentScale: number): Promise<boolean> => {
       try {
         const pageIds = ['pdf-page-1', 'pdf-page-2', 'pdf-page-3', 'pdf-page-4'];
@@ -460,6 +480,14 @@ export default function App() {
       console.error('PDF export failed:', err);
       alert(err.message || 'PDF 파일 생성 중 오류가 발생했습니다. 기기의 메모리가 부족하거나 리포트 내용이 너무 길어 처리할 수 없습니다. 화면의 리포트 미리보기(Modal) 기능을 참고해 주세요.');
     } finally {
+      if (wrapper && originalStyle) {
+        wrapper.style.position = originalStyle.position;
+        wrapper.style.left = originalStyle.left;
+        wrapper.style.top = originalStyle.top;
+        wrapper.style.zIndex = originalStyle.zIndex;
+        wrapper.style.opacity = originalStyle.opacity;
+        wrapper.style.pointerEvents = originalStyle.pointerEvents;
+      }
       setIsSavingPdf(false);
     }
   };
@@ -2103,7 +2131,10 @@ export default function App() {
 
       {/* 5. Print-Only Beautiful PDF Report Template */}
       {analysisResult && (
-        <div style={{ position: 'fixed', left: '0px', top: '0px', width: '820px', zIndex: -9999, opacity: 0.01, pointerEvents: 'none' }}>
+        <div 
+          id="pdf-template-wrapper"
+          style={{ position: 'absolute', left: '-9999px', top: '0px', width: '820px', zIndex: -9999, opacity: 0.01, pointerEvents: 'none' }}
+        >
           <div 
             id="pdf-page-1"
             className="text-zinc-900 p-8 font-sans border-2 border-zinc-950 bg-white mb-6"
