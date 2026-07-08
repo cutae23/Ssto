@@ -386,13 +386,15 @@ export default function App() {
     } : null;
 
     if (wrapper) {
-      wrapper.style.position = 'absolute';
+      wrapper.style.position = 'fixed';
       wrapper.style.left = '0px';
       wrapper.style.top = '0px';
-      wrapper.style.zIndex = '-50'; // Place below the main opaque app UI (bg-zinc-950) so it's hidden to users but visible for painting
+      wrapper.style.zIndex = '-9999'; // Completely behind everything
       wrapper.style.opacity = '1';  // Keep full opacity so html2canvas captures clear colors and text
       wrapper.style.pointerEvents = 'none';
     }
+
+    const renderErrors: string[] = [];
 
     const tryRenderPdf = async (currentScale: number): Promise<boolean> => {
       try {
@@ -400,7 +402,7 @@ export default function App() {
         const existingPages = pageIds.filter(id => document.getElementById(id));
 
         if (existingPages.length === 0) {
-          throw new Error('PDF report pages not found');
+          throw new Error('PDF report pages not found in DOM');
         }
 
         const pdf = new jsPDF('p', 'mm', 'a4');
@@ -417,10 +419,14 @@ export default function App() {
             scale: currentScale,
             useCORS: true,
             backgroundColor: '#ffffff',
-            logging: false,
+            logging: true, // Enable logging to see actual issues in console
             allowTaint: false, // Must be false to keep canvas untainted
             width: 820,         // Force exact width of the template to be captured
             windowWidth: 820,   // Force layout calculation at exactly 820px width
+            scrollX: 0,         // CRITICAL: Prevents blank/offset rendering when page is scrolled down!
+            scrollY: 0,         // CRITICAL: Prevents blank/offset rendering when page is scrolled down!
+            x: 0,               // Forces rendering from top-left of target
+            y: 0,               // Forces rendering from top-left of target
           });
 
           const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG is more memory-friendly than PNG
@@ -455,26 +461,29 @@ export default function App() {
         const safeTickerName = tickerName.replace(/[^a-zA-Z0-9가-힣_]/g, '_');
         pdf.save(`VisionMarketAI_Report_${safeTickerName}.pdf`);
         return true;
-      } catch (err) {
+      } catch (err: any) {
         console.warn(`Render attempt failed with scale ${currentScale}:`, err);
+        renderErrors.push(`[배율 ${currentScale}x] ${err.message || err}`);
         return false;
       }
     };
 
     try {
-      // First Attempt: Optimal Scale
-      const optimalScale = isMobile ? 1.0 : 1.5;
-      let success = await tryRenderPdf(optimalScale);
-      
-      // Second Attempt: Fail-safe Memory-efficient Scale
-      if (!success) {
-        console.log('Retrying with safe low-memory scale...');
-        const fallbackScale = isMobile ? 0.8 : 1.0;
-        success = await tryRenderPdf(fallbackScale);
+      // Scales to try: starting high/optimal down to safe, low-memory fallbacks
+      const scalesToTry = isMobile ? [1.0, 0.8, 0.6] : [1.5, 1.2, 1.0];
+      let success = false;
+
+      for (const scale of scalesToTry) {
+        console.log(`Starting PDF render with scale: ${scale}...`);
+        success = await tryRenderPdf(scale);
+        if (success) {
+          console.log(`Successfully generated PDF with scale: ${scale}`);
+          break;
+        }
       }
       
       if (!success) {
-        throw new Error('All PDF generation attempts failed. This can happen on low-end devices due to canvas size or memory restrictions.');
+        throw new Error(`모든 배율 단계에서 PDF 생성이 실패했습니다.\n오류 로그:\n${renderErrors.join('\n')}`);
       }
     } catch (err: any) {
       console.error('PDF export failed:', err);
@@ -2133,7 +2142,7 @@ export default function App() {
       {analysisResult && (
         <div 
           id="pdf-template-wrapper"
-          style={{ position: 'absolute', left: '-9999px', top: '0px', width: '820px', zIndex: -9999, opacity: 0.01, pointerEvents: 'none' }}
+          style={{ position: 'fixed', left: '0px', top: '0px', width: '820px', zIndex: -9999, opacity: 1, visibility: 'visible', pointerEvents: 'none' }}
         >
           <div 
             id="pdf-page-1"
@@ -3208,6 +3217,35 @@ export default function App() {
                   <Printer className={`h-4 w-4 ${isSavingPdf ? 'animate-spin' : ''}`} />
                   <span>{isSavingPdf ? 'PDF 생성 중...' : 'PDF 다운로드'}</span>
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 7. PDF Generation Fullscreen Overlay */}
+      <AnimatePresence>
+        {isSavingPdf && (
+          <div className="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-4 bg-zinc-950/95 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="text-center flex flex-col items-center max-w-sm"
+            >
+              <div className="relative mb-6">
+                <div className="h-16 w-16 rounded-full border-4 border-indigo-500/10 border-t-indigo-500 animate-spin"></div>
+                <Printer className="h-6 w-6 text-indigo-400 absolute inset-0 m-auto" />
+              </div>
+              <h3 className="text-base font-black text-white font-display mb-2">고화질 PDF 리포트 생성 중</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed font-semibold">
+                모바일 환경 및 저사양 기기에서도 최적화된 용량과 해상도로 리포트 장표를 렌더링하고 있습니다. 잠시만 기다려 주세요... (수 초가 소요될 수 있습니다)
+              </p>
+              <div className="mt-4 flex gap-1.5 items-center justify-center">
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce"></span>
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]"></span>
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.4s]"></span>
               </div>
             </motion.div>
           </div>
