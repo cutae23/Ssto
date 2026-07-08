@@ -2089,7 +2089,7 @@ export default function App() {
 
       {/* 5. Print-Only Beautiful PDF Report Template */}
       {analysisResult && (
-        <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '820px', overflow: 'hidden', height: 0 }}>
+        <div style={{ position: 'absolute', left: '-9999px', top: '0px', width: '820px' }}>
           <div 
             id="pdf-report-template"
             className="pdf-capture-container text-zinc-900 p-8 font-sans border-2 border-zinc-950"
