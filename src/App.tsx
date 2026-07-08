@@ -367,6 +367,122 @@ export default function App() {
   const [isPdfPreviewOpen, setIsPdfPreviewOpen] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
+  // Helper to parse nested parentheses in oklch() colors and replace them with standard colors
+  const replaceOklchInString = (str: string, replacer: (match: string) => string): string => {
+    let result = '';
+    let lastIdx = 0;
+    let idx = str.indexOf('oklch(');
+    while (idx !== -1) {
+      result += str.substring(lastIdx, idx);
+      let depth = 1;
+      let j = idx + 6;
+      for (; j < str.length; j++) {
+        if (str[j] === '(') depth++;
+        else if (str[j] === ')') depth--;
+        if (depth === 0) {
+          break;
+        }
+      }
+      if (depth === 0) {
+        const match = str.substring(idx, j + 1);
+        result += replacer(match);
+        lastIdx = j + 1;
+      } else {
+        result += str.substring(idx, idx + 6);
+        lastIdx = idx + 6;
+      }
+      idx = str.indexOf('oklch(', lastIdx);
+    }
+    result += str.substring(lastIdx);
+    return result;
+  };
+
+  // Helper to temporarily convert oklch colors to rgb across style blocks and stylesheets
+  const fixOklchInStyleSheets = async (): Promise<() => void> => {
+    const oklchCache = new Map<string, string>();
+    const resolveOklch = (colorStr: string): string => {
+      if (oklchCache.has(colorStr)) {
+        return oklchCache.get(colorStr)!;
+      }
+      const temp = document.createElement('div');
+      temp.style.color = colorStr;
+      document.body.appendChild(temp);
+      const resolved = getComputedStyle(temp).color;
+      document.body.removeChild(temp);
+      const result = resolved || colorStr;
+      oklchCache.set(colorStr, result);
+      return result;
+    };
+
+    const restoreActions: (() => void)[] = [];
+
+    // 1. Process inline <style> elements
+    const styleElements = Array.from(document.querySelectorAll('style'));
+    for (const styleEl of styleElements) {
+      const originalText = styleEl.textContent || '';
+      if (originalText.includes('oklch')) {
+        const replacedText = replaceOklchInString(originalText, (match) => {
+          try {
+            return resolveOklch(match);
+          } catch (e) {
+            return match;
+          }
+        });
+        styleEl.textContent = replacedText;
+        restoreActions.push(() => {
+          styleEl.textContent = originalText;
+        });
+      }
+    }
+
+    // 2. Process external same-origin stylesheet <link> elements
+    const linkElements = Array.from(document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+    for (const linkEl of linkElements) {
+      try {
+        const isSameOrigin = !linkEl.href || linkEl.href.startsWith(window.location.origin) || !linkEl.href.includes('://');
+        if (isSameOrigin && linkEl.href) {
+          const response = await fetch(linkEl.href);
+          if (response.ok) {
+            const originalText = await response.text();
+            if (originalText.includes('oklch')) {
+              const replacedText = replaceOklchInString(originalText, (match) => {
+                try {
+                  return resolveOklch(match);
+                } catch (e) {
+                  return match;
+                }
+              });
+
+              const tempStyle = document.createElement('style');
+              tempStyle.textContent = replacedText;
+              document.head.appendChild(tempStyle);
+
+              const originalDisabled = linkEl.disabled;
+              linkEl.disabled = true;
+
+              restoreActions.push(() => {
+                tempStyle.remove();
+                linkEl.disabled = originalDisabled;
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to process link stylesheet for oklch replacement:', linkEl.href, err);
+      }
+    }
+
+    return () => {
+      restoreActions.forEach(action => {
+        try {
+          action();
+        } catch (e) {
+          console.error('Error restoring stylesheet:', e);
+        }
+      });
+    };
+  };
+
   const handleSavePdf = async () => {
     if (!analysisResult) return;
     setIsSavingPdf(true);
@@ -468,7 +584,11 @@ export default function App() {
       }
     };
 
+    let restoreOklch: (() => void) | null = null;
     try {
+      // Temporarily parse and convert OKLCH color definitions to standard RGB to prevent html2canvas parsing crashes
+      restoreOklch = await fixOklchInStyleSheets();
+
       // Scales to try: starting high/optimal down to safe, low-memory fallbacks
       const scalesToTry = isMobile ? [1.0, 0.8, 0.6] : [1.5, 1.2, 1.0];
       let success = false;
@@ -489,6 +609,13 @@ export default function App() {
       console.error('PDF export failed:', err);
       alert(err.message || 'PDF 파일 생성 중 오류가 발생했습니다. 기기의 메모리가 부족하거나 리포트 내용이 너무 길어 처리할 수 없습니다. 화면의 리포트 미리보기(Modal) 기능을 참고해 주세요.');
     } finally {
+      if (restoreOklch) {
+        try {
+          restoreOklch();
+        } catch (e) {
+          console.error('Failed to restore OKLCH colors:', e);
+        }
+      }
       if (wrapper && originalStyle) {
         wrapper.style.position = originalStyle.position;
         wrapper.style.left = originalStyle.left;
